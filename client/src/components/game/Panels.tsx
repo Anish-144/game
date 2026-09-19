@@ -138,8 +138,8 @@ export function BidPanel({
         {[10, 25, 50].map((jump) => (
           <button
             key={jump}
-            disabled={floor + jump > cap}
-            onClick={() => { play('tap'); buzz('light'); setValue(nextFree(Math.min(cap, floor + jump), 1)); }}
+            disabled={value + jump > cap}
+            onClick={() => { play('tap'); buzz('light'); setValue((v) => nextFree(Math.min(cap, v + jump), 1)); }}
             className="h-9 px-3.5 rounded-full text-[13.5px] font-bold surface disabled:opacity-35"
           >
             +{jump}
@@ -283,7 +283,11 @@ export function PartnerPanel({
         return;
       }
       if (chosen.has(key1) || chosen.has(key2)) {
-        if (specs.length >= required) { buzz('warning'); return; }
+        if (specs.length >= required) {
+          play('tap');
+          setSpecs((list) => list.filter((s) => chosenKey(s) !== key1 && chosenKey(s) !== key2));
+          return;
+        }
         play('tap');
         buzz('light');
         const toAdd = chosen.has(key1) ? spec2 : spec1;
