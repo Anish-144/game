@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Kadi Teri</title>
+    <meta
+      name="description"
+      content="Kadi Teri is a mobile card game of hidden partnerships. Bid, name trump, pick a secret partner card, and take the points. 4 to 10 players with bots or friends."
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <meta name="theme-color" content="#022c22" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Kadi Teri" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Paint the table colour before React mounts so there is no white flash. */
+      html, body { margin: 0; height: 100%; background: #022c22; }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
+        color: #fde68a;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        font-size: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div id="boot">KADI TERI</div></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

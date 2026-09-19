@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Kadi Teri — mobile game design tokens
+   Reference viewport: 390 x 844 (iPhone 15 Pro), portrait only.
+   ============================================================ */
+
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+  --color-felt-900: #022c22;
+  --color-felt-800: #04382c;
+  --color-felt-700: #064e3b;
+  --color-felt-600: #066048;
+  --color-felt-500: #0b7a5c;
+
+  --color-ink-950: #0b1118;
+  --color-ink-900: #111827;
+  --color-ink-800: #1f2937;
+  --color-ink-700: #374151;
+  --color-ink-600: #4b5563;
+
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #f59e0b;
+  --color-gold-600: #d97706;
+
+  --color-mint-200: #a7f3d0;
+  --color-mint-300: #6ee7b7;
+  --color-mint-400: #34d399;
+  --color-mint-500: #10b981;
+
+  --color-royal-400: #60a5fa;
+  --color-royal-500: #3b82f6;
+  --color-royal-600: #2563eb;
+}
+
+/* ─── reset + shell ──────────────────────────────────────── */
+/* These live in @layer base so Tailwind utilities still win.
+   Unlayered rules beat every layered rule in the cascade, which
+   would silently cancel padding, margin and font-weight classes. */
+
+@layer base {
+  /* Table palette. The theme setting swaps these three families. */
+  :root {
+    --table-top: #064e3b;
+    --table-mid: #033a2c;
+    --table-bot: #022c22;
+    --table-halo: 16, 185, 129;
+    --felt-1: #0b7a5c;
+    --felt-2: #06553f;
+    --felt-3: #033a2c;
+    --felt-4: #021f19;
+    --accent-soft: #a7f3d0;
+  }
+
+  :root[data-theme='midnight'] {
+    --table-top: #1e293b;
+    --table-mid: #131c2b;
+    --table-bot: #0b1118;
+    --table-halo: 96, 165, 250;
+    --felt-1: #274060;
+    --felt-2: #1c2f48;
+    --felt-3: #131f31;
+    --felt-4: #0a1119;
+    --accent-soft: #bfdbfe;
+  }
+
+  :root[data-theme='crimson'] {
+    --table-top: #5b1220;
+    --table-mid: #3d0c16;
+    --table-bot: #24070e;
+    --table-halo: 248, 113, 113;
+    --felt-1: #7a2231;
+    --felt-2: #5a1724;
+    --felt-3: #3b0f18;
+    --felt-4: #1e070c;
+    --accent-soft: #fecdd3;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.4;
+    color: #f4f7f5;
+    background: var(--table-bot);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+  button { cursor: pointer; }
+  input { -webkit-user-select: text; user-select: text; }
+}
+
+/* ─── screen scaffold ────────────────────────────────────── */
+
+@layer utilities {
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .screen-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  .no-bar::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* Backgrounds */
+  .bg-table {
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgba(var(--table-halo), 0.18) 0%, transparent 60%),
+      linear-gradient(180deg, var(--table-top) 0%, var(--table-mid) 45%, var(--table-bot) 100%);
+  }
+  .bg-felt {
+    background:
+      radial-gradient(75% 55% at 50% 42%,
+        var(--felt-1) 0%, var(--felt-2) 38%, var(--felt-3) 72%, var(--felt-4) 100%);
+  }
+  .bg-ink {
+    background: linear-gradient(180deg, #111827 0%, #0b1118 100%);
+  }
+
+  /* Surfaces */
+  .surface {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .surface-solid {
+    background: #1f2937;
+    border: 1px solid #374151;
+  }
+  .surface-gold {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.42);
+  }
+
+  /* Text */
+  .text-gold-gradient {
+    background: linear-gradient(180deg, #fef3c7 0%, #fcd34d 48%, #d97706 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Secondary accent text, tinted to match the table theme. */
+  .text-accent-soft { color: var(--accent-soft); }
+  .text-accent-dim { color: color-mix(in srgb, var(--accent-soft) 70%, transparent); }
+
+  /* Glows */
+  .glow-gold { box-shadow: 0 0 0 1px rgba(245,158,11,.5), 0 8px 30px rgba(245,158,11,.28); }
+  .glow-mint { box-shadow: 0 0 0 1px rgba(52,211,153,.5), 0 8px 30px rgba(16,185,129,.26); }
+
+  .card-shadow { box-shadow: 0 6px 18px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.6); }
+  .lift-shadow { box-shadow: 0 16px 34px rgba(0,0,0,.55), 0 0 0 2px rgba(252,211,77,.9); }
+}
+
+/* ─── animations ─────────────────────────────────────────── */
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0.55); }
+  70%  { box-shadow: 0 0 0 12px rgba(252, 211, 77, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0); }
+}
+.ring-turn { animation: pulse-ring 1.8s ease-out infinite; }
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50%      { transform: translateY(-10px) rotate(var(--r, 0deg)); }
+}
+.float-slow { animation: float-slow 6s ease-in-out infinite; }
+
+@keyframes sheen {
+  0%   { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(220%); }
+}
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%);
+  animation: sheen 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-turn, .float-slow, .sheen::after { animation: none; }
+}
+
+/* The bottom sheet and docks pick up the table colour too. */
+.themed-sheet {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--table-top) 55%, #0b1118) 0%,
+    color-mix(in srgb, var(--table-bot) 70%, #0b1118) 100%);
+}
