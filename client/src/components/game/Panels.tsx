@@ -339,21 +339,26 @@ export function PartnerPanel({
                 </div>
               )}
               {spec && mode === '500' && (
-                <div className="flex rounded-full overflow-hidden" style={{ border: '1px solid rgba(255,255,255,.18)' }}>
-                  {(['first', 'second'] as const).map((o) => (
-                    <button
-                      key={o}
-                      disabled={spec.usesOtherCopy}
-                      onClick={() => setOccurrence(i, o)}
-                      className="px-2 h-7 text-[11.5px] font-bold disabled:opacity-40"
-                      style={spec.occurrence === o
-                        ? { background: '#fbbf24', color: '#241503' }
-                        : { color: 'rgba(255,255,255,.6)' }}
-                    >
-                      {o === 'first' ? '1st' : '2nd'}
-                    </button>
-                  ))}
-                </div>
+                spec.usesOtherCopy ? (
+                  <div className="h-7 flex items-center justify-center rounded-full px-3 text-[11px] font-bold text-white/70 tracking-wide uppercase" style={{ background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.15)' }}>
+                    Fixed
+                  </div>
+                ) : (
+                  <div className="flex rounded-full overflow-hidden" style={{ border: '1px solid rgba(255,255,255,.18)' }}>
+                    {(['first', 'second'] as const).map((o) => (
+                      <button
+                        key={o}
+                        onClick={() => setOccurrence(i, o)}
+                        className="px-2 h-7 text-[11.5px] font-bold"
+                        style={spec.occurrence === o
+                          ? { background: '#fbbf24', color: '#241503' }
+                          : { color: 'rgba(255,255,255,.6)' }}
+                      >
+                        {o === 'first' ? '1st' : '2nd'}
+                      </button>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           );

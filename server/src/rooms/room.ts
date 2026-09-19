@@ -149,6 +149,15 @@ export function handSeatToBot(room: Room, player: Player, difficulty: BotDifficu
   player.difficulty = difficulty;
 }
 
+export function restoreSeat(room: Room, playerId: string): boolean {
+  const p = room.players.find((x) => x.id === playerId);
+  if (!p || !p.takenOver) return false;
+  p.takenOver = false;
+  p.isBot = false;
+  p.difficulty = undefined;
+  return true;
+}
+
 /** Give every taken-over seat back before the next deal. */
 export function restoreTakenOverSeats(room: Room): Player[] {
   const restored: Player[] = [];

@@ -14,6 +14,7 @@ import {
 import {
   addBot, addPlayer, createRoom, deleteRoom, endGame, getRoom, handSeatToBot,
   humansPresent, isFull, isPersonsSeat, removeBot, removePlayer, Room, startGame,
+  restoreSeat
 } from '../rooms/room';
 import { generateRoomCode, normalizeCode } from '../utils/roomCode';
 import { evaluateBots } from '../engine/bot';
@@ -122,7 +123,7 @@ export function registerHandlers(io: Server): void {
       if (!room?.engine) continue;
 
       const state = room.engine.state;
-      if (now - state.turnStartedAt > 30000) {
+      if (now - state.turnStartedAt > 60000) {
         let activeId: string | null = null;
         if (state.phase === 'bidding') activeId = state.currentBidder;
         else if (state.phase === 'trump_selection' || state.phase === 'partner_selection') activeId = state.declarerId;
@@ -219,6 +220,7 @@ export function registerHandlers(io: Server): void {
             config: room.config,
           });
           if (room.engine) {
+            if (restoreSeat(room, p.playerId)) emitLobby(io, room);
             socket.emit('reconnected', { state: room.engine.privateState(p.playerId) });
           }
           socket.emit('chat-history', room.chat);
@@ -329,7 +331,10 @@ export function registerHandlers(io: Server): void {
     socket.on('place-bid', (p: PlaceBidPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
-      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
+      if (seatIsBotControlled(room, p.playerId)) {
+        restoreSeat(room, p.playerId);
+        emitLobby(io, room);
+      }
 
       const result = room.engine.placeBid(p.playerId, p.bid);
       if (!result.valid) return fail(socket, result.error ?? 'That bid is not allowed');
@@ -346,7 +351,10 @@ export function registerHandlers(io: Server): void {
     socket.on('pass', (p: PassBidPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
-      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
+      if (seatIsBotControlled(room, p.playerId)) {
+        restoreSeat(room, p.playerId);
+        emitLobby(io, room);
+      }
 
       const result = room.engine.passBid(p.playerId);
       if (!result.valid) return fail(socket, result.error ?? 'You cannot pass right now');
@@ -363,7 +371,10 @@ export function registerHandlers(io: Server): void {
     socket.on('select-trump', (p: SelectTrumpPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
-      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
+      if (seatIsBotControlled(room, p.playerId)) {
+        restoreSeat(room, p.playerId);
+        emitLobby(io, room);
+      }
 
       const result = room.engine.selectTrump(p.playerId, p.trump);
       if (!result.valid) return fail(socket, result.error ?? 'Cannot set trump');
@@ -377,7 +388,10 @@ export function registerHandlers(io: Server): void {
     socket.on('select-partners', (p: SelectPartnersPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
-      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
+      if (seatIsBotControlled(room, p.playerId)) {
+        restoreSeat(room, p.playerId);
+        emitLobby(io, room);
+      }
 
       const result = room.engine.selectPartners(p.playerId, p.partnerSpecs);
       if (!result.valid) return fail(socket, result.error ?? 'Those partner cards are not allowed');
@@ -390,7 +404,10 @@ export function registerHandlers(io: Server): void {
     socket.on('play-card', (p: PlayCardPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
-      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
+      if (seatIsBotControlled(room, p.playerId)) {
+        restoreSeat(room, p.playerId);
+        emitLobby(io, room);
+      }
 
       const resolve = () => {
         if (!room.engine) return;
@@ -486,6 +503,7 @@ export function registerHandlers(io: Server): void {
       sessions.set(socket.id, { roomCode: room.code, playerId: p.playerId });
 
       if (room.engine) {
+        if (restoreSeat(room, p.playerId)) emitLobby(io, room);
         room.engine.updateSocket(p.playerId, socket.id);
         socket.emit('reconnected', {
           state: room.engine.privateState(p.playerId),
