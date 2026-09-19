@@ -21,6 +21,8 @@ export interface CardFaceProps {
   partner?: boolean;
   /** This card took the trick. */
   winner?: boolean;
+  /** Text badge to display on the card (e.g. "1 Held"). */
+  badge?: string;
 }
 
 export default function PlayingCard({
@@ -34,6 +36,7 @@ export default function PlayingCard({
   pointsLift = 0,
   partner = false,
   winner = false,
+  badge,
 }: CardFaceProps) {
   const height = Math.round(width * 1.42);
   const ink = SUIT_INK[suit];
@@ -144,6 +147,21 @@ export default function PlayingCard({
             title="Partner card"
           >
             ★
+          </div>
+        )}
+
+        {/* arbitrary text badge */}
+        {badge && (
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-2 py-0.5 font-bold shadow-lg"
+            style={{
+              fontSize: Math.max(9, width * 0.16),
+              background: '#374151',
+              color: '#f9fafb',
+              border: '1.5px solid rgba(255,255,255,.2)',
+            }}
+          >
+            {badge}
           </div>
         )}
       </div>

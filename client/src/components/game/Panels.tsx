@@ -383,38 +383,41 @@ export function PartnerPanel({
       </div>
 
       {/* rank picker */}
-      <div className="grid grid-cols-7 gap-1.5 mb-4">
+      <div className="flex flex-wrap justify-center gap-2 mb-4">
         {RANKS.map((rank) => {
           const held = heldCount(rank, suit);
           const blocked = held >= copiesPerCard;
           const stateB = mode === '500' && held === 1;
           const isChosen = specs.some((s) => s.rank === rank && s.suit === suit);
           return (
-            <button
+            <motion.button
               key={rank}
               disabled={blocked}
               onClick={() => toggle(rank)}
-              className="h-[46px] rounded-xl text-[15px] font-black relative"
-              style={
-                blocked
-                  ? { background: 'rgba(255,255,255,.03)', color: 'rgba(255,255,255,.2)' }
-                  : isChosen
-                    ? { background: 'linear-gradient(180deg,#fbbf24,#d97706)', color: '#241503' }
-                    : { background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)' }
-              }
+              whileTap={!blocked ? { scale: 0.92 } : undefined}
+              className="relative rounded-[10px]"
+              style={{
+                outline: isChosen ? '3px solid #fcd34d' : 'none',
+                outlineOffset: 2,
+                opacity: blocked ? 0.7 : 1,
+              }}
             >
-              {rank}
-              {stateB && !isChosen && (
-                <span className="absolute top-0.5 right-1 text-[9px] font-bold text-royal-400">B</span>
-              )}
-            </button>
+              <PlayingCard
+                rank={rank}
+                suit={suit}
+                width={50}
+                points="none"
+                dimmed={blocked}
+                badge={stateB ? '1 Held' : undefined}
+              />
+            </motion.button>
           );
         })}
       </div>
 
-      <p className="text-[12.5px] text-white/45 text-center mb-3 leading-snug">
-        Greyed ranks are cards you already hold.
-        {mode === '500' && ' A "B" card means you hold one copy, so the other copy counts.'}
+      <p className="text-[12.5px] text-white/45 text-center mb-3 leading-snug px-2">
+        Dimmed cards are already in your hand.
+        {mode === '500' && ' In 2-deck games, you can still call a card if you only hold one of them.'}
       </p>
 
       <Button onClick={() => onConfirm(specs)} disabled={!ready}>

@@ -13,6 +13,7 @@ import { leaveRoom } from '../lib/socket';
 import { SUIT_ACCENT, SUIT_GLYPH, SUIT_LABEL, totalPointsFor } from '../lib/cards';
 import { play } from '../lib/audio';
 import { buzz } from '../lib/haptics';
+import confetti from 'canvas-confetti';
 
 export default function Score() {
   const navigate = useNavigate();
@@ -34,6 +35,33 @@ export default function Score() {
     if (!score) return;
     play(iWon ? 'win' : 'lose');
     buzz(iWon ? 'success' : 'warning');
+
+    if (iWon) {
+      const duration = 2500;
+      const end = Date.now() + duration;
+
+      const frame = () => {
+        confetti({
+          particleCount: 4,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.8 },
+          colors: ['#fbbf24', '#f59e0b', '#10b981', '#34d399', '#60a5fa']
+        });
+        confetti({
+          particleCount: 4,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.8 },
+          colors: ['#fbbf24', '#f59e0b', '#10b981', '#34d399', '#60a5fa']
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      frame();
+    }
   }, [score, iWon]);
 
   if (!score || !config) {
