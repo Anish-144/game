@@ -239,6 +239,14 @@ export function bindSocket(): Socket {
     }
   });
 
+  s.on('player-emote', (msg) => {
+    store().addEmote(msg);
+    const id = msg.playerId + msg.timestamp.toString();
+    setTimeout(() => {
+      store().removeEmote(id);
+    }, 2500);
+  });
+
   // ── errors ──────────────────────────────────────────────
   s.on('error', (d: { message: string }) => {
     const message = d?.message ?? 'Something went wrong';
@@ -360,3 +368,10 @@ export function sendChat(text: string): void {
   if (!roomCode || !text.trim()) return;
   getSocket().emit('send-chat', { roomCode, playerId: myPlayerId, text });
 }
+
+export function sendEmote(emote: string): void {
+  const { roomCode, myPlayerId } = store();
+  if (!roomCode || !emote) return;
+  getSocket().emit('send-emote', { roomCode, playerId: myPlayerId, emote });
+}
+

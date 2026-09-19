@@ -77,8 +77,19 @@ export function play(name: SoundName): void {
     case 'reveal': [440, 554, 659, 880].forEach((f, i) => tone(f, 'sine', 0.34, 0.24, i * 0.08)); break;
     case 'play':   noise(0.1, 0.09); tone(880, 'sine', 0.05, 0.08); break;
     case 'trick':  tone(784, 'sine', 0.12); tone(1046, 'sine', 0.16, 0.18, 0.07); break;
-    case 'win':    [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, 'triangle', 0.4, 0.22, i * 0.09)); break;
-    case 'lose':   [440, 370, 294].forEach((f, i) => tone(f, 'sine', 0.4, 0.2, i * 0.13)); break;
+    case 'win':
+      // Upbeat major arpeggio
+      [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50].forEach((f, i) => 
+        tone(f, 'triangle', 0.15, 0.25, i * 0.08)
+      ); 
+      break;
+    case 'lose':
+      // Womp womp womp wooomp (descending)
+      tone(293.66, 'sawtooth', 0.4, 0.3, 0);       // D4
+      tone(277.18, 'sawtooth', 0.4, 0.3, 0.45);    // Db4
+      tone(261.63, 'sawtooth', 0.4, 0.3, 0.9);     // C4
+      tone(246.94, 'sawtooth', 1.0, 0.3, 1.35);    // B3 (longer)
+      break;
   }
 }
 

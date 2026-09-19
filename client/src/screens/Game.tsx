@@ -17,7 +17,7 @@ import { useGameStore } from '../store/gameStore';
 import { useGame } from '../hooks/useGame';
 import {
   castEndVote, leaveRoom, passBid, placeBid, playCard,
-  proposeEndGame, selectPartners, selectTrump,
+  proposeEndGame, selectPartners, selectTrump, sendEmote,
 } from '../lib/socket';
 import { SUIT_GLYPH, SUIT_LABEL, partnerLabel, sortHand } from '../lib/cards';
 import { useSettings } from '../store/settingsStore';
@@ -33,6 +33,10 @@ export default function Game() {
   const g = useGame();
   const sortEnabled = useSettings((st) => st.sortHand);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [emoteOpen, setEmoteOpen] = useState(false);
+
+  const myEmotes = s.emotes.filter((e) => e.playerId === s.myPlayerId);
+
 
   useEffect(() => {
     if (!s.roomCode && !s.rejoining) navigate('/', { replace: true });
@@ -98,6 +102,41 @@ export default function Game() {
           )}
         </div>
 
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setEmoteOpen((v) => !v)}
+            aria-label="Send emote"
+            className="w-11 h-11 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(11,17,24,.6)', border: '1px solid rgba(255,255,255,.14)' }}
+          >
+            <span className="text-[20px]">😀</span>
+          </button>
+          
+          <AnimatePresence>
+            {emoteOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setEmoteOpen(false)} />
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                  className="absolute top-[52px] right-0 z-50 flex flex-col gap-2 p-2 rounded-2xl surface border border-white/10"
+                >
+                  {['😂', '😡', '👏', '😭', '🎉'].map((emo) => (
+                    <button
+                      key={emo}
+                      onClick={() => { sendEmote(emo); setEmoteOpen(false); }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-[24px] hover:bg-white/10 active:scale-90 transition-transform"
+                    >
+                      {emo}
+                    </button>
+                  ))}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+
         <button
           onClick={() => setMenuOpen(true)}
           aria-label="Game menu"
@@ -155,7 +194,23 @@ export default function Game() {
       {/* ── my strip ────────────────────────────────────── */}
       {s.phase === 'playing' && (
         <div className="shrink-0 px-4 py-2 flex items-center gap-3">
-          <Avatar name={s.myPlayerName} index={s.myAvatar} size={38} />
+          <div className="relative">
+            <AnimatePresence>
+              {myEmotes.map((e) => (
+                <motion.div
+                  key={e.playerId + e.timestamp}
+                  initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                  animate={{ opacity: 1, y: -40, scale: 1.5 }}
+                  exit={{ opacity: 0, y: -60, scale: 1 }}
+                  transition={{ duration: 2, ease: 'easeOut' }}
+                  className="absolute left-1/2 -translate-x-1/2 -translate-y-full z-50 pointer-events-none text-2xl drop-shadow-md"
+                >
+                  {e.emote}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            <Avatar name={s.myPlayerName} index={s.myAvatar} size={38} />
+          </div>
           <div className="flex-1 min-w-0">
             <div className="text-[14.5px] font-bold truncate flex items-center gap-1.5">
               {s.myPlayerName || 'You'}

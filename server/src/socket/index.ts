@@ -9,7 +9,7 @@ import {
   AddBotPayload, BotDifficulty, CastEndVotePayload, CreateRoomPayload, JoinRoomPayload,
   PassBidPayload, PlaceBidPayload, PlayCardPayload, PlayerReadyPayload,
   Player, ProposeEndPayload, ReconnectPayload, RemoveBotPayload, SelectPartnersPayload,
-  SelectTrumpPayload, ShareInvitePayload, StartGamePayload, SendChatPayload, ChatMessage,
+  SelectTrumpPayload, ShareInvitePayload, StartGamePayload, SendChatPayload, ChatMessage, SendEmotePayload, PlayerEmoteMessage,
 } from '../types';
 import {
   addBot, addPlayer, createRoom, deleteRoom, endGame, getRoom, handSeatToBot,
@@ -487,6 +487,23 @@ export function registerHandlers(io: Server): void {
       if (room.chat.length > 100) room.chat = room.chat.slice(-100);
 
       io.to(room.code).emit('chat-message', msg);
+    });
+
+    // ── EMOTE ────────────────────────────────────────────────
+    socket.on('send-emote', (p: SendEmotePayload) => {
+      if (!p?.emote || typeof p.emote !== 'string') return;
+      const room = getRoom(normalizeCode(p?.roomCode));
+      if (!room) return;
+      const player = room.players.find((x) => x.id === p.playerId);
+      if (!player) return;
+
+      const msg: PlayerEmoteMessage = {
+        playerId: player.id,
+        emote: p.emote,
+        timestamp: Date.now(),
+      };
+
+      io.to(room.code).emit('player-emote', msg);
     });
 
     // ── RECONNECT ────────────────────────────────────────────

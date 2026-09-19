@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import type {
   BidEntry, Card, CompletedTrick, EndVote, GamePhase, PartnerCardSpec, Player,
-  PublicGameState, RoomConfig, ScoreResult, Suit, TeamPoints, Trick, ChatMessage,
+  PublicGameState, RoomConfig, ScoreResult, Suit, TeamPoints, Trick, ChatMessage, PlayerEmoteMessage,
 } from '../types';
 import { forgetRoom, getAvatar, getPlayerId, getPlayerName, lastRoom, rememberRoom } from '../lib/identity';
 
@@ -82,6 +82,9 @@ interface GameState {
   // chat
   chat: ChatMessage[];
   unreadChat: boolean;
+
+  // emotes
+  emotes: PlayerEmoteMessage[];
 }
 
 interface GameActions {
@@ -120,6 +123,8 @@ interface GameActions {
   addChat: (msg: ChatMessage) => void;
   setChatHistory: (msgs: ChatMessage[]) => void;
   markChatRead: () => void;
+  addEmote: (msg: PlayerEmoteMessage) => void;
+  removeEmote: (id: string) => void;
 }
 
 const base = {
@@ -159,6 +164,7 @@ const base = {
   rejoining: false,
   chat: [] as ChatMessage[],
   unreadChat: false,
+  emotes: [] as PlayerEmoteMessage[],
 };
 
 let bannerSeq = 0;
@@ -279,6 +285,11 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
   addChat: (msg) => set((s) => ({ chat: [...s.chat, msg], unreadChat: true })),
   setChatHistory: (chat) => set({ chat }),
   markChatRead: () => set({ unreadChat: false }),
+
+  addEmote: (msg) => set((s) => ({ emotes: [...s.emotes, msg] })),
+  removeEmote: (id) => set((s) => ({
+    emotes: s.emotes.filter((e) => e.playerId + e.timestamp.toString() !== id)
+  })),
 
   // The round is thrown away but the room, the seats and the code survive,
   // so the table can regroup in the lobby and deal again.

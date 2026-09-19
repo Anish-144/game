@@ -8,6 +8,7 @@ import { Avatar } from '../../ui';
 import PlayingCard from './PlayingCard';
 import { SUIT_ACCENT, SUIT_GLYPH } from '../../lib/cards';
 import type { Player, Suit, Trick } from '../../types';
+import { useGameStore } from '../../store/gameStore';
 
 export interface SeatView {
   player: Player;
@@ -113,9 +114,28 @@ function Seat({ seat, avatarSize }: { seat: SeatView; avatarSize: number }) {
     player, cardsLeft, isDeclarer, isPartner, isTurn, bid,
     points, outOf, onDeclaringSide, showPoints,
   } = seat;
+
+  const emotes = useGameStore((s) => s.emotes.filter((e) => e.playerId === player.id));
+
   return (
     <>
       <div className="relative">
+        {/* Emotes float above the avatar */}
+        <AnimatePresence>
+          {emotes.map((e) => (
+            <motion.div
+              key={e.playerId + e.timestamp}
+              initial={{ opacity: 0, y: 10, scale: 0.5 }}
+              animate={{ opacity: 1, y: -40, scale: 1.5 }}
+              exit={{ opacity: 0, y: -60, scale: 1 }}
+              transition={{ duration: 2, ease: 'easeOut' }}
+              className="absolute left-1/2 -translate-x-1/2 -translate-y-full z-50 pointer-events-none text-2xl drop-shadow-md"
+            >
+              {e.emote}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
         <div
           className={`rounded-full p-[3px] ${isTurn ? 'ring-turn' : ''}`}
           style={{
