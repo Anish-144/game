@@ -272,7 +272,7 @@ export default function Game() {
           <div className="pb-2">
             <p className="text-[15px] text-white/70 text-center mb-1">
               <span className="font-bold text-white">
-                {s.endVote.startedBy === s.myPlayerId ? 'You' : s.endVote.startedByName}
+                {s.endVote.startedBy === s.myPlayerId ? 'You' : g.playerById(s.endVote.startedBy)?.name ?? 'Someone'}
               </span>{' '}
               asked to stop the round. The table goes back to the lobby and the
               room code stays the same.
@@ -304,7 +304,7 @@ export default function Game() {
             </div>
 
             <p className="text-[13.5px] text-white/55 text-center mb-4 tabular">
-              {s.endVote.agreed} of {s.endVote.needed} needed
+              {Object.values(s.endVote.votes).filter(Boolean).length} of {s.endVote.needed} needed
             </p>
 
             {s.endVote.votes[s.myPlayerId] === undefined ? (

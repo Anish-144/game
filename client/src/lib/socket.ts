@@ -226,6 +226,19 @@ export function bindSocket(): Socket {
     if (d.config) store().setConfig(d.config);
   });
 
+  // ── chat ────────────────────────────────────────────────
+  s.on('chat-history', (chat) => {
+    store().setChatHistory(chat);
+  });
+
+  s.on('chat-message', (msg) => {
+    store().addChat(msg);
+    if (!store().unreadChat) {
+      play('tap');
+      buzz('light');
+    }
+  });
+
   // ── errors ──────────────────────────────────────────────
   s.on('error', (d: { message: string }) => {
     const message = d?.message ?? 'Something went wrong';
@@ -340,4 +353,10 @@ export function leaveRoom(): void {
   const s = getSocket();
   s.emit('leave-room');
   store().leaveRoom();
+}
+
+export function sendChat(text: string): void {
+  const { roomCode, myPlayerId } = store();
+  if (!roomCode || !text.trim()) return;
+  getSocket().emit('send-chat', { roomCode, playerId: myPlayerId, text });
 }

@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import type {
   BidEntry, Card, CompletedTrick, EndVote, GamePhase, PartnerCardSpec, Player,
-  PublicGameState, RoomConfig, ScoreResult, Suit, TeamPoints, Trick,
+  PublicGameState, RoomConfig, ScoreResult, Suit, TeamPoints, Trick, ChatMessage,
 } from '../types';
 import { forgetRoom, getAvatar, getPlayerId, getPlayerName, lastRoom, rememberRoom } from '../lib/identity';
 
@@ -74,11 +74,14 @@ interface GameState {
   /** Why the last game stopped early, shown once back in the lobby. */
   stoppedReason: string | null;
 
-  // ui
   banners: Banner[];
   error: string | null;
   errorNonce: number;
   rejoining: boolean;
+
+  // chat
+  chat: ChatMessage[];
+  unreadChat: boolean;
 }
 
 interface GameActions {
@@ -114,6 +117,9 @@ interface GameActions {
   dismissBanner: (id: number) => void;
   leaveRoom: () => void;
   resetRound: () => void;
+  addChat: (msg: ChatMessage) => void;
+  setChatHistory: (msgs: ChatMessage[]) => void;
+  markChatRead: () => void;
 }
 
 const base = {
@@ -151,6 +157,8 @@ const base = {
   error: null,
   errorNonce: 0,
   rejoining: false,
+  chat: [] as ChatMessage[],
+  unreadChat: false,
 };
 
 let bannerSeq = 0;
@@ -267,6 +275,10 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
   setInvite: (invite) => set({ invite }),
 
   setEndVote: (endVote) => set({ endVote }),
+
+  addChat: (msg) => set((s) => ({ chat: [...s.chat, msg], unreadChat: true })),
+  setChatHistory: (chat) => set({ chat }),
+  markChatRead: () => set({ unreadChat: false }),
 
   // The round is thrown away but the room, the seats and the code survive,
   // so the table can regroup in the lobby and deal again.

@@ -12,6 +12,7 @@ import Score from './screens/Score';
 import Settings from './screens/Settings';
 import Rules from './screens/Rules';
 import Banners from './components/Banners';
+import { ChatContainer } from './components/chat/ChatContainer';
 
 import { bindSocket } from './lib/socket';
 import { useGameStore } from './store/gameStore';
@@ -35,6 +36,7 @@ function App() {
   return (
     <BrowserRouter>
       <Banners />
+      <ChatContainer />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/create" element={<CreateRoom />} />

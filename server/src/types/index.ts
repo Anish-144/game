@@ -35,7 +35,6 @@ export interface Player {
   takenOver?: boolean;
 }
 
-/** An open vote to end the game early. Only humans still present may vote. */
 export interface EndVote {
   startedBy: string;
   startedAt: number;
@@ -44,6 +43,14 @@ export interface EndVote {
   /** How many yes votes end it, fixed when the vote opens. */
   needed: number;
   eligible: string[];
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timestamp: number;
 }
 
 export type GamePhase =
@@ -131,6 +138,7 @@ export interface ScoreResult {
 
 export interface GameState {
   phase: GamePhase;
+  turnStartedAt: number;
   config: RoomConfig;
   players: Player[];
 
@@ -257,4 +265,10 @@ export interface CastEndVotePayload {
   playerId: string;
   roomCode: string;
   agree: boolean;
+}
+
+export interface SendChatPayload {
+  playerId: string;
+  roomCode: string;
+  text: string;
 }

@@ -9,7 +9,7 @@ import {
   AddBotPayload, BotDifficulty, CastEndVotePayload, CreateRoomPayload, JoinRoomPayload,
   PassBidPayload, PlaceBidPayload, PlayCardPayload, PlayerReadyPayload,
   Player, ProposeEndPayload, ReconnectPayload, RemoveBotPayload, SelectPartnersPayload,
-  SelectTrumpPayload, ShareInvitePayload, StartGamePayload,
+  SelectTrumpPayload, ShareInvitePayload, StartGamePayload, SendChatPayload, ChatMessage,
 } from '../types';
 import {
   addBot, addPlayer, createRoom, deleteRoom, endGame, getRoom, handSeatToBot,
@@ -22,6 +22,7 @@ import {
   emitEndVote, emitGameStarted, emitGameStopped, emitLobby, emitPartnersSelected,
   emitRoundFinished, emitTrumpSelected, safePlayers, sendDeclarerHand,
 } from './broadcast';
+import { allRoomCodes } from '../rooms/room';
 
 /** socket.id -> where that socket is sitting */
 const sessions = new Map<string, { roomCode: string; playerId: string }>();
@@ -114,6 +115,35 @@ function checkAbandonment(io: Server, room: Room): void {
 }
 
 export function registerHandlers(io: Server): void {
+  setInterval(() => {
+    const now = Date.now();
+    for (const code of allRoomCodes()) {
+      const room = getRoom(code);
+      if (!room?.engine) continue;
+
+      const state = room.engine.state;
+      if (now - state.turnStartedAt > 30000) {
+        let activeId: string | null = null;
+        if (state.phase === 'bidding') activeId = state.currentBidder;
+        else if (state.phase === 'trump_selection' || state.phase === 'partner_selection') activeId = state.declarerId;
+        else if (state.phase === 'playing') activeId = state.currentTurn;
+
+        if (activeId) {
+          const player = room.players.find((p) => p.id === activeId);
+          if (player && !player.isBot && !player.takenOver) {
+            handSeatToBot(room, player, room.config.botDifficulty);
+            io.to(room.code).emit('player-disconnected', {
+              playerId: player.id,
+              takenOverByBot: true,
+            });
+            emitLobby(io, room);
+            evaluateBots(io, room);
+          }
+        }
+      }
+    }
+  }, 1000);
+
   io.on('connection', (socket: Socket) => {
     // ── CREATE ROOM ──────────────────────────────────────────
     socket.on('create-room', (p: CreateRoomPayload) => {
@@ -160,6 +190,7 @@ export function registerHandlers(io: Server): void {
           players: safePlayers(room.players),
           config: room.config,
         });
+        socket.emit('chat-history', room.chat);
         emitLobby(io, room);
       } catch {
         fail(socket, 'Could not create the room');
@@ -190,6 +221,7 @@ export function registerHandlers(io: Server): void {
           if (room.engine) {
             socket.emit('reconnected', { state: room.engine.privateState(p.playerId) });
           }
+          socket.emit('chat-history', room.chat);
           emitLobby(io, room);
           return;
         }
@@ -216,6 +248,7 @@ export function registerHandlers(io: Server): void {
           players: safePlayers(room.players),
           config: room.config,
         });
+        socket.emit('chat-history', room.chat);
         emitLobby(io, room);
       } catch {
         fail(socket, 'Could not join the room');
@@ -406,7 +439,7 @@ export function registerHandlers(io: Server): void {
       }, VOTE_WINDOW_MS);
     });
 
-    // ── VOTE ─────────────────────────────────────────────────
+    // ── CAST END VOTE ────────────────────────────────────────
     socket.on('cast-end-vote', (p: CastEndVotePayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.endVote) return;
@@ -415,6 +448,28 @@ export function registerHandlers(io: Server): void {
       room.endVote.votes[p.playerId] = !!p.agree;
       emitEndVote(io, room);
       resolveVote(io, room);
+    });
+
+    // ── CHAT ─────────────────────────────────────────────────
+    socket.on('send-chat', (p: SendChatPayload) => {
+      if (!p?.text || typeof p.text !== 'string' || !p.text.trim()) return;
+      const room = getRoom(normalizeCode(p?.roomCode));
+      if (!room) return;
+      const player = room.players.find((x) => x.id === p.playerId);
+      if (!player) return;
+
+      const msg: ChatMessage = {
+        id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        senderId: player.id,
+        senderName: player.name,
+        text: p.text.trim().slice(0, 300),
+        timestamp: Date.now(),
+      };
+
+      room.chat.push(msg);
+      if (room.chat.length > 100) room.chat = room.chat.slice(-100);
+
+      io.to(room.code).emit('chat-message', msg);
     });
 
     // ── RECONNECT ────────────────────────────────────────────
@@ -445,6 +500,7 @@ export function registerHandlers(io: Server): void {
         });
       }
 
+      socket.emit('chat-history', room.chat);
       socket.to(room.code).emit('player-reconnected', { playerId: p.playerId });
       emitLobby(io, room);
     });

@@ -16,6 +16,20 @@ export interface Card {
   copy: 1 | 2;
 }
 
+export interface SendChatPayload {
+  playerId: string;
+  roomCode: string;
+  text: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timestamp: number;
+}
+
 export interface Player {
   id: string;
   name: string;

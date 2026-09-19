@@ -269,19 +269,39 @@ export function PartnerPanel({
     if (held >= copiesPerCard) { buzz('warning'); return; }
 
     const usesOtherCopy = mode === '500' && held === 1;
-    const occurrence = mode === 'classic' ? 'any' : 'first';
-    const spec: PartnerCardSpec = { rank, suit, occurrence, usesOtherCopy };
-    const key = chosenKey(spec);
+    const occurrence1 = mode === 'classic' ? 'any' : 'first';
+    const spec1: PartnerCardSpec = { rank, suit, occurrence: occurrence1, usesOtherCopy };
+    const key1 = chosenKey(spec1);
 
-    if (chosen.has(key)) {
-      play('tap');
-      setSpecs((list) => list.filter((s) => chosenKey(s) !== key));
-      return;
+    const spec2: PartnerCardSpec = { rank, suit, occurrence: 'second', usesOtherCopy };
+    const key2 = chosenKey(spec2);
+
+    if (mode === '500' && held === 0) {
+      if (chosen.has(key1) && chosen.has(key2)) {
+        play('tap');
+        setSpecs((list) => list.filter((s) => chosenKey(s) !== key1 && chosenKey(s) !== key2));
+        return;
+      }
+      if (chosen.has(key1) || chosen.has(key2)) {
+        if (specs.length >= required) { buzz('warning'); return; }
+        play('tap');
+        buzz('light');
+        const toAdd = chosen.has(key1) ? spec2 : spec1;
+        setSpecs((list) => [...list, toAdd]);
+        return;
+      }
+    } else {
+      if (chosen.has(key1)) {
+        play('tap');
+        setSpecs((list) => list.filter((s) => chosenKey(s) !== key1));
+        return;
+      }
     }
+
     if (specs.length >= required) { buzz('warning'); return; }
     play('tap');
     buzz('light');
-    setSpecs((list) => [...list, spec]);
+    setSpecs((list) => [...list, spec1]);
   };
 
   const setOccurrence = (index: number, occurrence: 'first' | 'second') => {

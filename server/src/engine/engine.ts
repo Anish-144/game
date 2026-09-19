@@ -16,6 +16,7 @@ export class GameEngine {
     const sorted = [...players].sort((a, b) => a.seatIndex - b.seatIndex);
     this.state = {
       phase: 'waiting',
+      turnStartedAt: Date.now(),
       config,
       players: sorted,
       hands: {},
@@ -45,6 +46,7 @@ export class GameEngine {
     const playerIds = this.state.players.map((p) => p.id);
     this.state.hands = deal(deck, playerIds);
     initBidding(this.state);
+    this.state.turnStartedAt = Date.now();
   }
 
   placeBid(playerId: string, bid: number): BidResult {
@@ -53,6 +55,7 @@ export class GameEngine {
       this.state.phase = 'trump_selection';
       this.state.currentBidder = null;
     }
+    if (result.valid) this.state.turnStartedAt = Date.now();
     return result;
   }
 
@@ -62,6 +65,7 @@ export class GameEngine {
       this.state.phase = 'trump_selection';
       this.state.currentBidder = null;
     }
+    if (result.valid) this.state.turnStartedAt = Date.now();
     return result;
   }
 
@@ -70,6 +74,7 @@ export class GameEngine {
     if (playerId !== this.state.declarerId) return { valid: false, error: 'Only declarer selects trump' };
     this.state.trump = trump;
     this.state.phase = 'partner_selection';
+    this.state.turnStartedAt = Date.now();
     return { valid: true };
   }
 
@@ -81,6 +86,7 @@ export class GameEngine {
     this.state.phase = 'playing';
     this.state.currentLeader = this.state.declarerId;
     this.state.currentTurn = this.state.declarerId;
+    this.state.turnStartedAt = Date.now();
     return { valid: true };
   }
 
@@ -95,6 +101,7 @@ export class GameEngine {
       };
       this.state.roundWinner = score.roundWinner;
     }
+    if (result.valid) this.state.turnStartedAt = Date.now();
     return result;
   }
 

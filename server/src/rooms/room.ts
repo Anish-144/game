@@ -3,7 +3,7 @@
 // The host is ALWAYS seated inside the room at creation time.
 // ============================================================
 
-import { BotDifficulty, EndVote, Player, RoomConfig } from '../types';
+import { BotDifficulty, ChatMessage, EndVote, Player, RoomConfig } from '../types';
 import { GameEngine } from '../engine/engine';
 
 export interface Room {
@@ -19,6 +19,8 @@ export interface Room {
   humansAtStart?: number;
   /** An open vote to end the game early. */
   endVote?: EndVote;
+  /** Chat history for this room. */
+  chat: ChatMessage[];
 }
 
 const rooms = new Map<string, Room>();
@@ -37,6 +39,7 @@ export function createRoom(code: string, config: RoomConfig, host: Player): Room
     engine: null,
     createdAt: Date.now(),
     lastActivity: Date.now(),
+    chat: [],
   };
   rooms.set(code, room);
   return room;
