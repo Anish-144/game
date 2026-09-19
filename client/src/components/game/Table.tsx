@@ -115,7 +115,14 @@ function Seat({ seat, avatarSize }: { seat: SeatView; avatarSize: number }) {
     points, outOf, onDeclaringSide, showPoints,
   } = seat;
 
-  const emotes = useGameStore((s) => s.emotes.filter((e) => e.playerId === player.id));
+  // Select the array itself, never a fresh one. A selector that returns a new
+  // array on every call makes useSyncExternalStore re-render without end, which
+  // React aborts with "Maximum update depth exceeded" and takes the tree down.
+  const allEmotes = useGameStore((s) => s.emotes);
+  const emotes = useMemo(
+    () => allEmotes.filter((e) => e.playerId === player.id),
+    [allEmotes, player.id],
+  );
 
   return (
     <>
