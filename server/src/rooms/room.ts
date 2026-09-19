@@ -120,9 +120,22 @@ export function isFull(room: Room): boolean {
   return room.players.length === room.config.playerCount;
 }
 
-/** People, as opposed to bots and seats a bot has taken over. */
+/**
+ * A seat that belongs to a person rather than to a bot from the start.
+ * A seat a bot is covering still belongs to whoever left it, which
+ * matters the moment they come back.
+ */
+export function isPersonsSeat(player: Player): boolean {
+  return !player.isBot || !!player.takenOver;
+}
+
+/**
+ * The people actually at the table right now. Someone who refreshed and
+ * came back counts, even though a bot finishes the round in their seat,
+ * or the table could be closed out from under them.
+ */
 export function humansPresent(room: Room): Player[] {
-  return room.players.filter((p) => !p.isBot && p.isConnected);
+  return room.players.filter((p) => p.isConnected && isPersonsSeat(p));
 }
 
 /** Hand a seat to a bot so a round can finish without the person. */

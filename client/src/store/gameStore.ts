@@ -283,7 +283,13 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
 
   clearStoppedReason: () => set({ stoppedReason: null }),
 
-  leaveRoom: () => { forgetRoom(); set({ ...base }); },
+  // Leaving a room clears the room, not the connection. The socket is
+  // still up, and wiping `connected` here left the next lobby unable to
+  // start because its button waits on it.
+  leaveRoom: () => {
+    forgetRoom();
+    set((s) => ({ ...base, connected: s.connected }));
+  },
   resetRound: () => set({
     ...base,
     roomCode: useGameStore.getState().roomCode,

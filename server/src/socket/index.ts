@@ -13,7 +13,7 @@ import {
 } from '../types';
 import {
   addBot, addPlayer, createRoom, deleteRoom, endGame, getRoom, handSeatToBot,
-  humansPresent, isFull, removeBot, removePlayer, Room, startGame,
+  humansPresent, isFull, isPersonsSeat, removeBot, removePlayer, Room, startGame,
 } from '../rooms/room';
 import { generateRoomCode, normalizeCode } from '../utils/roomCode';
 import { evaluateBots } from '../engine/bot';
@@ -377,7 +377,9 @@ export function registerHandlers(io: Server): void {
       if (room.endVote) return fail(socket, 'A vote is already open');
 
       const voter = room.players.find((x) => x.id === p.playerId);
-      if (!voter || voter.isBot) return fail(socket, 'You are not playing this game');
+      if (!voter || !isPersonsSeat(voter) || !voter.isConnected) {
+        return fail(socket, 'You are not playing this game');
+      }
 
       room.endVote = {
         startedBy: p.playerId,

@@ -29,6 +29,7 @@ export default function Lobby() {
   const myPlayerId = useGameStore((s) => s.myPlayerId);
   const connected = useGameStore((s) => s.connected);
   const rejoining = useGameStore((s) => s.rejoining);
+  const errorNonce = useGameStore((s) => s.errorNonce);
   const stoppedReason = useGameStore((s) => s.stoppedReason);
   const clearStoppedReason = useGameStore((s) => s.clearStoppedReason);
   const invite = useGameStore((s) => s.invite);
@@ -48,6 +49,10 @@ export default function Lobby() {
   const bots = players.length - humans;
   const partners = config ? requiredPartnerCount(config.mode, config.playerCount) : 1;
 
+  // Every other seat is a bot and the table is full, so there is nobody
+  // left to invite. A code and a QR would only be clutter.
+  const soloTable = full && humans === 1;
+
   const rows = useMemo(
     () => Array.from({ length: seats }, (_, i) => players[i] ?? null),
     [seats, players],
@@ -62,8 +67,13 @@ export default function Lobby() {
   }, [phase, navigate]);
 
   useEffect(() => {
-    if (roomCode) requestInvite();
-  }, [roomCode]);
+    if (roomCode && !soloTable) requestInvite();
+  }, [roomCode, soloTable]);
+
+  // If the server turns the start down, give the button back.
+  useEffect(() => {
+    if (errorNonce > 0) setStarting(false);
+  }, [errorNonce]);
 
   useEffect(() => {
     if (!copied) return;
@@ -97,7 +107,7 @@ export default function Lobby() {
   return (
     <Screen>
       <TopBar
-        title={`Room ${roomCode}`}
+        title={soloTable ? 'Table with bots' : `Room ${roomCode}`}
         subtitle={`${config.mode === '500' ? 'Kadi Teri 500' : 'Classic'} · ${partners} partner card${partners > 1 ? 's' : ''}`}
         onBack={() => { leaveRoom(); navigate('/'); }}
         right={
@@ -126,36 +136,53 @@ export default function Lobby() {
           </motion.button>
         )}
 
-        {/* ── room code card ──────────────────────────────── */}
-        <button
-          onClick={doCopyCode}
-          className="w-full rounded-3xl p-5 mb-5 text-left active:scale-[.99] transition-transform"
-          style={{
-            background: 'linear-gradient(135deg, rgba(245,158,11,.18), rgba(245,158,11,.05))',
-            border: '1.5px solid rgba(251,191,36,.45)',
-          }}
-        >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[12.5px] font-bold uppercase tracking-widest text-gold-200/80">
-              Room code
-            </span>
-            <span className="text-[13px] font-bold text-white/55 tabular">
-              {players.length} / {seats} seated
-            </span>
+        {/* ── room code, only when there is someone to invite ─ */}
+        {soloTable ? (
+          <div
+            className="w-full rounded-3xl p-5 mb-5"
+            style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)' }}
+          >
+            <div className="text-[12.5px] font-bold uppercase tracking-widest text-white/45 mb-1">
+              Practice table
+            </div>
+            <div className="text-[22px] font-extrabold leading-tight">
+              You and {bots} bot{bots === 1 ? '' : 's'}
+            </div>
+            <div className="text-[13px] text-white/50 mt-1">
+              Nobody else can join, so there is no code to share.
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[38px] font-black tabular tracking-[.14em] text-gold-gradient leading-tight">
-              {roomCode}
-            </span>
-            <span className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-              {copied === 'code' ? <CheckIcon /> : <CopyIcon />}
-            </span>
-          </div>
-          <div className="text-[13px] text-white/50 mt-1">
-            {humans} human{humans === 1 ? '' : 's'} · {bots} bot{bots === 1 ? '' : 's'}
-            {copied === 'code' && <span className="text-mint-300 font-bold"> · copied</span>}
-          </div>
-        </button>
+        ) : (
+          <button
+            onClick={doCopyCode}
+            className="w-full rounded-3xl p-5 mb-5 text-left active:scale-[.99] transition-transform"
+            style={{
+              background: 'linear-gradient(135deg, rgba(245,158,11,.18), rgba(245,158,11,.05))',
+              border: '1.5px solid rgba(251,191,36,.45)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[12.5px] font-bold uppercase tracking-widest text-gold-200/80">
+                Room code
+              </span>
+              <span className="text-[13px] font-bold text-white/55 tabular">
+                {players.length} / {seats} seated
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[38px] font-black tabular tracking-[.14em] text-gold-gradient leading-tight">
+                {roomCode}
+              </span>
+              <span className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                {copied === 'code' ? <CheckIcon /> : <CopyIcon />}
+              </span>
+            </div>
+            <div className="text-[13px] text-white/50 mt-1">
+              {humans} human{humans === 1 ? '' : 's'} · {bots} bot{bots === 1 ? '' : 's'}
+              {copied === 'code' && <span className="text-mint-300 font-bold"> · copied</span>}
+            </div>
+          </button>
+        )}
 
         {/* ── seats ───────────────────────────────────────── */}
         <p className="text-[13px] font-bold uppercase tracking-wider text-white/45 mb-2.5">
@@ -248,19 +275,27 @@ export default function Lobby() {
       </ScreenBody>
 
       <ScreenFooter>
-        <div className="grid grid-cols-3 gap-2.5 mb-3">
-          <SmallAction label={copied === 'code' ? 'Copied' : 'Copy code'} onClick={doCopyCode} icon={<CopyIcon />} />
-          <SmallAction label={copied === 'link' ? 'Copied' : 'Share link'} onClick={doShareLink} icon={<LinkIcon />} />
-          <SmallAction label="Share QR" onClick={() => { buzz('light'); setQrOpen(true); }} icon={<QrIcon />} />
-        </div>
+        {!soloTable && (
+          <div className="grid grid-cols-3 gap-2.5 mb-3">
+            <SmallAction label={copied === 'code' ? 'Copied' : 'Copy code'} onClick={doCopyCode} icon={<CopyIcon />} />
+            <SmallAction label={copied === 'link' ? 'Copied' : 'Share link'} onClick={doShareLink} icon={<LinkIcon />} />
+            <SmallAction label="Share QR" onClick={() => { buzz('light'); setQrOpen(true); }} icon={<QrIcon />} />
+          </div>
+        )}
 
         {isHost ? (
           <Button
             onClick={() => { setStarting(true); startGame(); }}
             disabled={!full || starting || !connected}
-            icon={starting ? <Spinner size={18} /> : undefined}
+            icon={starting || !connected ? <Spinner size={18} /> : undefined}
           >
-            {full ? (starting ? 'Dealing' : 'Start game') : `Waiting for ${seats - players.length} more`}
+            {!connected
+              ? 'Reconnecting'
+              : !full
+                ? `Waiting for ${seats - players.length} more`
+                : starting
+                  ? 'Dealing'
+                  : 'Start game'}
           </Button>
         ) : (
           <div className="h-[60px] rounded-[30px] surface flex items-center justify-center gap-3 text-[16px] font-bold text-white/65">

@@ -55,6 +55,8 @@ export default function Game() {
 
   // If a bot took this seat over, the person watches the round out.
   const botHasMySeat = !!g.me?.takenOver;
+  // Nobody can join a full table of bots, so its code is not worth showing.
+  const soloTable = s.players.filter((p) => !p.isBot).length <= 1;
   const showFan = s.phase === 'playing';
   const showStrip = s.phase === 'bidding' || s.phase === 'trump_selection';
 
@@ -329,7 +331,7 @@ export default function Game() {
       {/* ── menu ────────────────────────────────────────── */}
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Table">
         <div className="rounded-2xl surface p-4 mb-4">
-          <Row label="Room" value={s.roomCode ?? '—'} />
+          {!soloTable && <Row label="Room" value={s.roomCode ?? '—'} />}
           <Row label="Mode" value={s.config.mode === '500' ? 'Kadi Teri 500' : 'Classic'} />
           <Row label="Contract" value={s.declarerId ? `${s.highestBid} by ${g.declarerName}` : 'Not set'} />
           <Row label="Trump" value={s.trump ? SUIT_LABEL[s.trump] : 'Not set'} />
