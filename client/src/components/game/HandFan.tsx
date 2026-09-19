@@ -52,9 +52,14 @@ export default function HandFan({
     if (!myTurn) setSelected(null);
   }, [myTurn]);
 
-  const n = cards.length;
-  const step = n > 1 ? Math.min(CARD_W - 8, MAX_SPREAD / (n - 1)) : 0;
-  const totalWidth = n > 0 ? CARD_W + step * (n - 1) : 0;
+  const perRow = Math.ceil(cards.length / 2);
+  const rows = [cards.slice(0, perRow), cards.slice(perRow)].filter((r) => r.length);
+
+  // Squeeze the overlap until the widest row fits the narrowest phone.
+  const AVAILABLE = 350;
+  const step = perRow > 1
+    ? Math.min(CARD_W + 8, (AVAILABLE - CARD_W) / (perRow - 1))
+    : 0;
 
   const tap = (card: Card) => {
     if (!myTurn) { buzz('warning'); return; }
@@ -71,60 +76,59 @@ export default function HandFan({
     }
   };
 
-  return (
-    <div className="relative w-full overflow-hidden" style={{ height: FAN_HEIGHT }}>
-      <div
-        className="absolute left-1/2 bottom-0"
-        style={{ width: totalWidth, transform: 'translateX(-50%)', height: FAN_HEIGHT }}
-      >
-        {cards.map((card, i) => {
-          const isSelected = selected === card.id;
-          const playable = myTurn && legal.has(card.id);
-          const mid = (n - 1) / 2;
-          const offset = i - mid;
-          const rotate = n > 1 ? offset * Math.min(2.6, 18 / n) : 0;
-          const arc = n > 1 ? Math.abs(offset) * Math.min(2.4, 16 / n) : 0;
-          // Lift every other chip so two neighbours never sit on top of each other.
-          const chipLift = i % 2 === 1 ? 17 : 0;
+  const cardH = Math.round(CARD_W * 1.42);
+  const totalH = rows.length > 1 ? cardH * 2 + 12 : cardH;
 
-          return (
-            <motion.button
-              key={card.id}
-              layout={animate}
-              initial={animate ? { y: 140, opacity: 0 } : false}
-              animate={{
-                y: (isSelected ? -26 : 0) + arc,
-                opacity: 1,
-                rotate,
-                scale: isSelected ? 1.06 : 1,
-              }}
-              transition={{ type: 'spring', stiffness: 460, damping: 30, delay: animate ? i * 0.015 : 0 }}
-              onClick={() => tap(card)}
-              aria-label={`${card.rank} of ${card.suit}${playable ? '' : ', not playable'}`}
-              className="absolute bottom-3 origin-bottom"
-              style={{ left: i * step, zIndex: isSelected ? 60 : i }}
-            >
-              <PlayingCard
-                rank={card.rank}
-                suit={card.suit}
-                width={CARD_W}
-                selected={isSelected}
-                dimmed={myTurn && !playable}
-                points="above"
-                pointsAlign="left"
-                pointsLift={chipLift}
-                partner={isPartnerCard(card, partnerSpecs)}
-              />
-            </motion.button>
-          );
-        })}
-      </div>
+  return (
+    <div className="relative w-full flex flex-col items-center gap-3 pt-2" style={{ height: totalH + 30 }}>
+      {rows.map((row, r) => (
+        <div
+          key={r}
+          className="relative"
+          style={{ width: CARD_W + step * (row.length - 1), height: cardH }}
+        >
+          {row.map((card, i) => {
+            const isSelected = selected === card.id;
+            const playable = myTurn && legal.has(card.id);
+
+            return (
+              <motion.button
+                key={card.id}
+                layout={animate}
+                initial={animate ? { y: 100, opacity: 0 } : false}
+                animate={{
+                  y: isSelected ? -24 : 0,
+                  opacity: 1,
+                  scale: isSelected ? 1.06 : 1,
+                }}
+                transition={{ type: 'spring', stiffness: 460, damping: 30, delay: animate ? i * 0.015 : 0 }}
+                onClick={() => tap(card)}
+                aria-label={`${card.rank} of ${card.suit}${playable ? '' : ', not playable'}`}
+                className="absolute top-0 origin-bottom"
+                style={{ left: i * step, zIndex: isSelected ? 60 : i }}
+              >
+                <PlayingCard
+                  rank={card.rank}
+                  suit={card.suit}
+                  width={CARD_W}
+                  selected={isSelected}
+                  dimmed={myTurn && !playable}
+                  points="above"
+                  pointsAlign="left"
+                  pointsLift={0}
+                  partner={isPartnerCard(card, partnerSpecs)}
+                />
+              </motion.button>
+            );
+          })}
+        </div>
+      ))}
 
       {selected && (
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute left-1/2 -translate-x-1/2 top-0 px-3.5 py-1.5 rounded-full text-[13px] font-bold"
+          className="absolute left-1/2 -translate-x-1/2 top-[-10px] px-3.5 py-1.5 rounded-full text-[13px] font-bold"
           style={{ background: 'rgba(252,211,77,.95)', color: '#241503', zIndex: 70 }}
         >
           Tap again to play

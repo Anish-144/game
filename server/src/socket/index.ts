@@ -471,6 +471,8 @@ function handleDeparture(io: Server, socket: Socket, explicit: boolean): void {
   const player = room.players.find((x) => x.id === session.playerId);
   if (!player || player.socketId !== socket.id) return;
 
+  socket.leave(room.code);
+
   if (room.engine) {
     player.isConnected = false;
     // A bot finishes the round in their seat so the table is not stuck

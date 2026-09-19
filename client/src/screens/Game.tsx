@@ -345,17 +345,30 @@ export default function Game() {
               Points taken
             </p>
             {g.fullyRevealed && (
-              <div
-                className="rounded-2xl px-3.5 py-2.5 mb-2.5 flex items-center justify-between"
-                style={{ background: 'rgba(245,158,11,.16)', border: '1px solid rgba(251,191,36,.4)' }}
-              >
-                <span className="text-[14.5px] font-bold text-gold-200">
-                  Declaring side, all partners revealed
-                </span>
-                <span className="text-[16px] font-black tabular text-gold-300">
-                  {g.teamPoints} / {s.highestBid}
-                </span>
-              </div>
+              <>
+                <div
+                  className="rounded-2xl px-3.5 py-2.5 mb-2.5 flex items-center justify-between"
+                  style={{ background: 'rgba(245,158,11,.16)', border: '1px solid rgba(251,191,36,.4)' }}
+                >
+                  <span className="text-[14.5px] font-bold text-gold-200">
+                    Declaring side, all partners revealed
+                  </span>
+                  <span className="text-[16px] font-black tabular text-gold-300">
+                    {g.teamPoints} / {s.highestBid}
+                  </span>
+                </div>
+                <div
+                  className="rounded-2xl px-3.5 py-2.5 mb-2.5 flex items-center justify-between"
+                  style={{ background: 'rgba(52,211,153,.16)', border: '1px solid rgba(52,211,153,.4)' }}
+                >
+                  <span className="text-[14.5px] font-bold text-mint-200">
+                    Opposing side
+                  </span>
+                  <span className="text-[16px] font-black tabular text-mint-300">
+                    {g.oppositionPoints} / {g.opponentTarget}
+                  </span>
+                </div>
+              </>
             )}
             <div className="rounded-2xl surface overflow-hidden mb-4">
               {[...s.players]
