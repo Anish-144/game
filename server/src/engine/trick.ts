@@ -111,13 +111,13 @@ export function beats(challenger: Card, current: Card, leadSuit: Suit, trump: Su
   const bTrump = current.suit === trump;
   if (cTrump && !bTrump) return true;
   if (!cTrump && bTrump) return false;
-  if (cTrump && bTrump) return rankValue(challenger.rank) > rankValue(current.rank);
+  if (cTrump && bTrump) return rankValue(challenger.rank) >= rankValue(current.rank);
   // Neither trump
   const cLead = challenger.suit === leadSuit;
   const bLead = current.suit === leadSuit;
   if (cLead && !bLead) return true;
   if (!cLead && bLead) return false;
-  if (cLead && bLead) return rankValue(challenger.rank) > rankValue(current.rank);
+  if (cLead && bLead) return rankValue(challenger.rank) >= rankValue(current.rank);
   return false; // both off-suit, can't win
 }
 
