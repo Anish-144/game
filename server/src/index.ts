@@ -47,6 +47,7 @@ if (fs.existsSync(CLIENT_DIR)) {
   // Deep links such as /join/A7KD92 are client routes, so hand back the shell.
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/socket.io') || req.path === '/health') return next();
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(CLIENT_DIR, 'index.html'));
   });
 
