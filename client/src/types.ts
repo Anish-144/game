@@ -285,3 +285,34 @@ export interface SendEmotePayload {
   roomCode: string;
   emote: string;
 }
+
+export interface PublicGameState {
+  phase: GamePhase;
+  config: RoomConfig;
+  players: Player[];
+  hands: Record<string, number>;
+  bids: BidEntry[];
+  currentBidder: string | null;
+  highestBid: number;
+  declarerId: string | null;
+  passedPlayers: string[];
+  trump: Suit | null;
+  partnerSpecs: PartnerCardSpec[];
+  revealedPartners: string[];
+  newlyRevealedPartner: string | null;
+  currentTrick: Trick;
+  completedTricks: CompletedTrick[];
+  currentLeader: string | null;
+  currentTurn: string | null;
+  teamPoints: TeamPoints | null;
+  roundWinner: 'declarer' | 'opponent' | null;
+  myHand?: Card[];
+}
+
+export interface RoomSetup {
+  mode: GameMode;
+  playerCount: number;
+  matchType: MatchType;
+  botCount: number;
+  botDifficulty: BotDifficulty;
+}

@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, Button, Screen, Spinner } from '../ui';
 import Sheet from '../ui/Sheet';
 import Table from '../components/game/Table';
