@@ -25,6 +25,18 @@ export interface Player {
   isBot: boolean;
   difficulty?: BotDifficulty;
   avatar: number;
+  /** A human seat a bot is playing because the person left mid-round. */
+  takenOver?: boolean;
+}
+
+/** An open vote to end the game early. */
+export interface EndVote {
+  startedBy: string;
+  startedByName: string;
+  votes: Record<string, boolean>;
+  agreed: number;
+  needed: number;
+  eligible: string[];
 }
 
 export type GamePhase =

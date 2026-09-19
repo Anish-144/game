@@ -15,7 +15,10 @@ import Reconnecting from '../components/Reconnecting';
 import DevOverlay from '../components/DevOverlay';
 import { useGameStore } from '../store/gameStore';
 import { useGame } from '../hooks/useGame';
-import { leaveRoom, passBid, placeBid, playCard, selectPartners, selectTrump } from '../lib/socket';
+import {
+  castEndVote, leaveRoom, passBid, placeBid, playCard,
+  proposeEndGame, selectPartners, selectTrump,
+} from '../lib/socket';
 import { SUIT_GLYPH, SUIT_LABEL, partnerLabel, sortHand } from '../lib/cards';
 import { useSettings } from '../store/settingsStore';
 import type { Card, Suit } from '../types';
@@ -50,6 +53,8 @@ export default function Game() {
     );
   }
 
+  // If a bot took this seat over, the person watches the round out.
+  const botHasMySeat = !!g.me?.takenOver;
   const showFan = s.phase === 'playing';
   const showStrip = s.phase === 'bidding' || s.phase === 'trump_selection';
 
@@ -191,7 +196,7 @@ export default function Game() {
             hand={s.myHand}
             trump={s.trump}
             leadSuit={s.settling ? null : s.currentTrick.leadSuit}
-            myTurn={g.isMyTurn && !s.settling}
+            myTurn={g.isMyTurn && !s.settling && !botHasMySeat}
             partnerSpecs={s.partnerSpecs}
             onPlay={playCard}
           />
@@ -238,6 +243,86 @@ export default function Game() {
             />
           )
       )}
+
+      {/* ── a bot is holding this seat ───────────────────── */}
+      {botHasMySeat && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-[13.5px] font-bold z-40 whitespace-nowrap"
+          style={{
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 166px)',
+            background: 'rgba(11,17,24,.92)',
+            color: '#fcd34d',
+            border: '1px solid rgba(251,191,36,.5)',
+          }}
+        >
+          A bot is finishing this round for you
+        </div>
+      )}
+
+      {/* ── vote to end the game ─────────────────────────── */}
+      <Sheet
+        open={!!s.endVote}
+        onClose={() => { /* a vote is answered, not dismissed */ }}
+        dismissable={false}
+        title="End this game?"
+      >
+        {s.endVote && (
+          <div className="pb-2">
+            <p className="text-[15px] text-white/70 text-center mb-1">
+              <span className="font-bold text-white">
+                {s.endVote.startedBy === s.myPlayerId ? 'You' : s.endVote.startedByName}
+              </span>{' '}
+              asked to stop the round. The table goes back to the lobby and the
+              room code stays the same.
+            </p>
+
+            <div className="flex items-center justify-center gap-2 my-5">
+              {s.endVote.eligible.map((id) => {
+                const answer = s.endVote!.votes[id];
+                const p = g.playerById(id);
+                return (
+                  <div key={id} className="flex flex-col items-center gap-1.5" style={{ width: 62 }}>
+                    <Avatar name={p?.name ?? '?'} index={p?.avatar ?? 0} size={40} />
+                    <span className="text-[11.5px] font-bold truncate w-full text-center">
+                      {p?.name ?? 'Player'}
+                    </span>
+                    <span
+                      className="text-[10.5px] font-black px-1.5 h-5 rounded-full flex items-center"
+                      style={answer === true
+                        ? { background: 'rgba(52,211,153,.25)', color: '#6ee7b7' }
+                        : answer === false
+                          ? { background: 'rgba(248,113,113,.22)', color: '#fca5a5' }
+                          : { background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.45)' }}
+                    >
+                      {answer === true ? 'end' : answer === false ? 'play on' : '…'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-[13.5px] text-white/55 text-center mb-4 tabular">
+              {s.endVote.agreed} of {s.endVote.needed} needed
+            </p>
+
+            {s.endVote.votes[s.myPlayerId] === undefined ? (
+              <div className="flex gap-3">
+                <Button variant="ghost" size="md" onClick={() => castEndVote(false)} full>
+                  Keep playing
+                </Button>
+                <Button variant="danger" size="md" onClick={() => castEndVote(true)} full>
+                  End it
+                </Button>
+              </div>
+            ) : (
+              <div className="h-[52px] rounded-[26px] surface flex items-center justify-center gap-3 text-[15px] font-bold text-white/60">
+                <Spinner size={16} />
+                Waiting for the others
+              </div>
+            )}
+          </div>
+        )}
+      </Sheet>
 
       <DevOverlay />
 
@@ -316,9 +401,24 @@ export default function Game() {
           <Button variant="ghost" size="md" onClick={() => { setMenuOpen(false); navigate('/settings'); }}>
             Settings
           </Button>
+          <Button
+            variant="ghost"
+            size="md"
+            disabled={!!s.endVote || botHasMySeat}
+            onClick={() => { setMenuOpen(false); proposeEndGame(); }}
+          >
+            {s.endVote ? 'A vote is already open' : 'End this game'}
+          </Button>
+          <p className="text-[12.5px] text-white/45 text-center -mt-1">
+            Everyone still playing votes. More than half ends it and the table
+            goes back to the lobby.
+          </p>
           <Button variant="danger" size="md" onClick={() => { leaveRoom(); navigate('/'); }}>
             Leave table
           </Button>
+          <p className="text-[12.5px] text-white/45 text-center -mt-1">
+            A bot finishes the round in your seat.
+          </p>
         </div>
       </Sheet>
     </Screen>
@@ -367,17 +467,40 @@ function TurnPill({
   );
 }
 
+/**
+ * The hand while you cannot play it yet. Split across two rows so every
+ * card is on screen at once, with no swiping to reach the far end.
+ */
 function HandStrip({ hand, sorted, trump }: { hand: Card[]; sorted: boolean; trump: Suit | null }) {
   const cards = sorted ? sortHand(hand, trump) : hand;
+  if (!cards.length) return null;
+
+  const perRow = Math.ceil(cards.length / 2);
+  const rows = [cards.slice(0, perRow), cards.slice(perRow)].filter((r) => r.length);
+
+  // Squeeze the overlap until the widest row fits the narrowest phone.
+  const CARD_W = 54;
+  const AVAILABLE = 342;
+  const step = perRow > 1
+    ? Math.min(CARD_W + 3, (AVAILABLE - CARD_W) / (perRow - 1))
+    : 0;
+  const cardH = Math.round(CARD_W * 1.42);
+
   return (
-    <div className="shrink-0 px-4 pb-2">
-      <div className="flex gap-1.5 overflow-x-auto no-bar" style={{ touchAction: 'pan-x' }}>
-        {cards.map((c) => (
-          <div key={c.id} className="shrink-0">
-            <PlayingCard rank={c.rank} suit={c.suit} width={42} points="none" />
-          </div>
-        ))}
-      </div>
+    <div className="shrink-0 px-4 pb-2 pt-1 flex flex-col items-center gap-1.5">
+      {rows.map((row, r) => (
+        <div
+          key={r}
+          className="relative"
+          style={{ width: CARD_W + step * (row.length - 1), height: cardH }}
+        >
+          {row.map((c, i) => (
+            <div key={c.id} className="absolute top-0" style={{ left: i * step, zIndex: i }}>
+              <PlayingCard rank={c.rank} suit={c.suit} width={CARD_W} points="corner" />
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 // The host is ALWAYS seated inside the room at creation time.
 // ============================================================
 
-import { BotDifficulty, Player, RoomConfig } from '../types';
+import { BotDifficulty, EndVote, Player, RoomConfig } from '../types';
 import { GameEngine } from '../engine/engine';
 
 export interface Room {
@@ -15,6 +15,10 @@ export interface Room {
   lastActivity: number;
   /** While this is in the future the table is showing a finished trick. */
   settleUntil?: number;
+  /** How many people were at the table when the deal started. */
+  humansAtStart?: number;
+  /** An open vote to end the game early. */
+  endVote?: EndVote;
 }
 
 const rooms = new Map<string, Room>();
@@ -116,7 +120,50 @@ export function isFull(room: Room): boolean {
   return room.players.length === room.config.playerCount;
 }
 
+/** People, as opposed to bots and seats a bot has taken over. */
+export function humansPresent(room: Room): Player[] {
+  return room.players.filter((p) => !p.isBot && p.isConnected);
+}
+
+/** Hand a seat to a bot so a round can finish without the person. */
+export function handSeatToBot(room: Room, player: Player, difficulty: BotDifficulty): void {
+  if (player.isBot) return;
+  player.isBot = true;
+  player.takenOver = true;
+  player.difficulty = difficulty;
+}
+
+/** Give every taken-over seat back before the next deal. */
+export function restoreTakenOverSeats(room: Room): Player[] {
+  const restored: Player[] = [];
+  for (const p of room.players) {
+    if (!p.takenOver) continue;
+    p.takenOver = false;
+    p.isBot = false;
+    p.difficulty = undefined;
+    restored.push(p);
+  }
+  return restored;
+}
+
+/** Clear the round so the table can go back to the lobby. */
+export function endGame(room: Room): void {
+  room.engine = null;
+  room.endVote = undefined;
+  room.settleUntil = undefined;
+  room.humansAtStart = undefined;
+
+  // A seat only a bot was holding belonged to someone who walked away.
+  // Free it rather than pretending they are still at the table.
+  const abandoned = room.players.filter((p) => p.takenOver && !p.isConnected);
+  for (const p of abandoned) removePlayer(room, p.id);
+  restoreTakenOverSeats(room);
+}
+
 export function startGame(room: Room): GameEngine {
+  restoreTakenOverSeats(room);
+  room.endVote = undefined;
+  room.humansAtStart = room.players.filter((p) => !p.isBot).length;
   const engine = new GameEngine(room.config, room.players);
   room.engine = engine;
   engine.startGame();

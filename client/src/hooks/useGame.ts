@@ -59,17 +59,33 @@ export function useGame() {
   const fullyRevealed =
     s.partnerSpecs.length > 0 && s.revealedPartners.length >= s.partnerSpecs.length;
 
-  /** Everything the declaring side has not banked is still up for grabs. */
-  const opponentPool = Math.max(0, totalPoints - teamPoints);
+  /**
+   * What the opposition has to get past to sink the contract. Everything
+   * the declaring side does not need is theirs to take, so this is fixed
+   * for the whole round rather than drifting with each trick.
+   */
+  const opponentTarget = Math.max(0, totalPoints - s.highestBid);
 
   const onDeclaringSide = (playerId: string) => knownTeamIds.includes(playerId);
+
+  /**
+   * Once the last partner reveals, the opposition is known by elimination,
+   * so both sides can be summed. Until then every seat shows only its own.
+   */
+  const oppositionPoints = useMemo(
+    () => s.players
+      .filter((p) => !knownTeamIds.includes(p.id))
+      .reduce((sum, p) => sum + (pointsTaken[p.id] ?? 0), 0),
+    [s.players, knownTeamIds, pointsTaken],
+  );
 
   /** The two numbers a seat shows: what they have, and out of what. */
   const scoreFor = (playerId: string) => {
     const declaring = onDeclaringSide(playerId);
+    const sided = declaring ? teamPoints : oppositionPoints;
     return {
-      points: declaring && fullyRevealed ? teamPoints : pointsTaken[playerId] ?? 0,
-      outOf: declaring ? s.highestBid : opponentPool,
+      points: fullyRevealed ? sided : pointsTaken[playerId] ?? 0,
+      outOf: declaring ? s.highestBid : opponentTarget,
       onDeclaringSide: declaring,
     };
   };
@@ -95,7 +111,7 @@ export function useGame() {
       showPoints: s.phase === 'playing' || s.phase === 'scoring',
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.players, s.myPlayerId, s.handCounts, s.declarerId, s.revealedPartners, s.phase, s.currentBidder, s.currentTurn, latestBid, pointsTaken, teamPoints, fullyRevealed, opponentPool, s.highestBid]);
+  }, [s.players, s.myPlayerId, s.handCounts, s.declarerId, s.revealedPartners, s.phase, s.currentBidder, s.currentTurn, latestBid, pointsTaken, teamPoints, oppositionPoints, fullyRevealed, opponentTarget, s.highestBid]);
 
   const partnersNeeded = s.config
     ? requiredPartnerCount(s.config.mode, s.config.playerCount)
@@ -119,7 +135,7 @@ export function useGame() {
     me, isMyTurn, isCurrentBidder, isDeclarer, isHost,
     playerById, nameOf, seats, partnersNeeded, myTricks, myPoints,
     pointsTaken, iHoldPartnerCard,
-    teamPoints, fullyRevealed, opponentPool, knownTeamIds, myScore,
+    teamPoints, oppositionPoints, fullyRevealed, opponentTarget, knownTeamIds, myScore,
     declarerName: nameOf(s.declarerId),
     bidderName: nameOf(s.currentBidder),
     turnName: nameOf(s.currentTurn),

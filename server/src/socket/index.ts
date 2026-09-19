@@ -6,21 +6,21 @@
 
 import { Server, Socket } from 'socket.io';
 import {
-  AddBotPayload, BotDifficulty, CreateRoomPayload, JoinRoomPayload,
+  AddBotPayload, BotDifficulty, CastEndVotePayload, CreateRoomPayload, JoinRoomPayload,
   PassBidPayload, PlaceBidPayload, PlayCardPayload, PlayerReadyPayload,
-  Player, ReconnectPayload, RemoveBotPayload, SelectPartnersPayload,
+  Player, ProposeEndPayload, ReconnectPayload, RemoveBotPayload, SelectPartnersPayload,
   SelectTrumpPayload, ShareInvitePayload, StartGamePayload,
 } from '../types';
 import {
-  addBot, addPlayer, createRoom, deleteRoom, getRoom, isFull,
-  removeBot, removePlayer, startGame,
+  addBot, addPlayer, createRoom, deleteRoom, endGame, getRoom, handSeatToBot,
+  humansPresent, isFull, removeBot, removePlayer, Room, startGame,
 } from '../rooms/room';
 import { generateRoomCode, normalizeCode } from '../utils/roomCode';
 import { evaluateBots } from '../engine/bot';
 import {
   emitBidPassed, emitBidPlaced, emitBiddingComplete, emitCardPlayed,
-  emitGameStarted, emitLobby, emitPartnersSelected, emitRoundFinished,
-  emitTrumpSelected, safePlayers, sendDeclarerHand,
+  emitEndVote, emitGameStarted, emitGameStopped, emitLobby, emitPartnersSelected,
+  emitRoundFinished, emitTrumpSelected, safePlayers, sendDeclarerHand,
 } from './broadcast';
 
 /** socket.id -> where that socket is sitting */
@@ -39,6 +39,78 @@ function clampPlayerCount(mode: 'classic' | '500', requested: number): number {
 
 function fail(socket: Socket, message: string): void {
   socket.emit('error', { message });
+}
+
+/**
+ * A seat handed to a bot keeps playing itself until the round ends, so
+ * the person who came back must not act on it as well.
+ */
+function seatIsBotControlled(room: Room, playerId: string): boolean {
+  const p = room.players.find((x) => x.id === playerId);
+  return !!p?.takenOver;
+}
+
+const VOTE_WINDOW_MS = 60_000;
+
+/** How many yes votes end the game: more than half of the people present. */
+function votesNeeded(room: Room): number {
+  return Math.floor(humansPresent(room).length / 2) + 1;
+}
+
+function closeVote(io: Server, room: Room): void {
+  room.endVote = undefined;
+  io.to(room.code).emit('end-vote-closed', {});
+}
+
+/** Wind the round up and put everyone back in the lobby. */
+function stopGame(io: Server, room: Room, reason: string): void {
+  if (!room.engine) return;
+  endGame(room);
+  emitGameStopped(io, room, reason);
+  emitLobby(io, room);
+}
+
+/**
+ * Close an open vote once the answer is settled either way.
+ * Returns true when the vote is finished with.
+ */
+function resolveVote(io: Server, room: Room): boolean {
+  const vote = room.endVote;
+  if (!vote) return true;
+
+  const agreed = vote.eligible.filter((id) => vote.votes[id] === true).length;
+  const refused = vote.eligible.filter((id) => vote.votes[id] === false).length;
+
+  if (agreed >= vote.needed) {
+    stopGame(io, room, 'The table voted to end the game.');
+    return true;
+  }
+  // Once enough people have said no, the yes votes can never get there.
+  if (refused > vote.eligible.length - vote.needed) {
+    closeVote(io, room);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * If most of the people who sat down have gone, there is no game left
+ * worth playing, so end it rather than letting bots play to nobody.
+ */
+function checkAbandonment(io: Server, room: Room): void {
+  if (!room.engine) return;
+  const present = humansPresent(room).length;
+
+  if (present === 0) {
+    endGame(room);
+    deleteRoom(room.code);
+    return;
+  }
+
+  const atStart = room.humansAtStart ?? present;
+  if (atStart > 1 && present * 2 < atStart) {
+    stopGame(io, room, 'Most of the players left, so the game stopped.');
+  }
 }
 
 export function registerHandlers(io: Server): void {
@@ -210,6 +282,7 @@ export function registerHandlers(io: Server): void {
       }
 
       startGame(room);
+      emitLobby(io, room);
       emitGameStarted(io, room);
       evaluateBots(io, room);
     });
@@ -218,6 +291,7 @@ export function registerHandlers(io: Server): void {
     socket.on('place-bid', (p: PlaceBidPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
+      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
 
       const result = room.engine.placeBid(p.playerId, p.bid);
       if (!result.valid) return fail(socket, result.error ?? 'That bid is not allowed');
@@ -234,6 +308,7 @@ export function registerHandlers(io: Server): void {
     socket.on('pass', (p: PassBidPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
+      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
 
       const result = room.engine.passBid(p.playerId);
       if (!result.valid) return fail(socket, result.error ?? 'You cannot pass right now');
@@ -250,6 +325,7 @@ export function registerHandlers(io: Server): void {
     socket.on('select-trump', (p: SelectTrumpPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
+      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
 
       const result = room.engine.selectTrump(p.playerId, p.trump);
       if (!result.valid) return fail(socket, result.error ?? 'Cannot set trump');
@@ -263,6 +339,7 @@ export function registerHandlers(io: Server): void {
     socket.on('select-partners', (p: SelectPartnersPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
+      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
 
       const result = room.engine.selectPartners(p.playerId, p.partnerSpecs);
       if (!result.valid) return fail(socket, result.error ?? 'Those partner cards are not allowed');
@@ -275,6 +352,7 @@ export function registerHandlers(io: Server): void {
     socket.on('play-card', (p: PlayCardPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room?.engine) return fail(socket, 'No game in progress');
+      if (seatIsBotControlled(room, p.playerId)) return fail(socket, 'A bot is finishing this round in your seat');
 
       const resolve = () => {
         if (!room.engine) return;
@@ -289,6 +367,47 @@ export function registerHandlers(io: Server): void {
       const settle = (room.settleUntil ?? 0) - Date.now();
       if (settle > 0) setTimeout(resolve, settle + 120);
       else resolve();
+    });
+
+    // ── PROPOSE ENDING THE GAME ──────────────────────────────
+    socket.on('propose-end', (p: ProposeEndPayload) => {
+      const room = getRoom(normalizeCode(p?.roomCode));
+      if (!room) return fail(socket, 'No room with that code');
+      if (!room.engine) return fail(socket, 'There is no game running');
+      if (room.endVote) return fail(socket, 'A vote is already open');
+
+      const voter = room.players.find((x) => x.id === p.playerId);
+      if (!voter || voter.isBot) return fail(socket, 'You are not playing this game');
+
+      room.endVote = {
+        startedBy: p.playerId,
+        startedAt: Date.now(),
+        votes: { [p.playerId]: true },
+        needed: votesNeeded(room),
+        eligible: humansPresent(room).map((x) => x.id),
+      };
+
+      emitEndVote(io, room);
+      if (resolveVote(io, room)) return;
+
+      // Nobody has to answer. An unanswered vote lapses on its own.
+      setTimeout(() => {
+        const still = getRoom(room.code);
+        if (still?.endVote && still.endVote.startedAt === room.endVote?.startedAt) {
+          closeVote(io, still);
+        }
+      }, VOTE_WINDOW_MS);
+    });
+
+    // ── VOTE ─────────────────────────────────────────────────
+    socket.on('cast-end-vote', (p: CastEndVotePayload) => {
+      const room = getRoom(normalizeCode(p?.roomCode));
+      if (!room?.endVote) return;
+      if (!room.endVote.eligible.includes(p.playerId)) return;
+
+      room.endVote.votes[p.playerId] = !!p.agree;
+      emitEndVote(io, room);
+      resolveVote(io, room);
     });
 
     // ── RECONNECT ────────────────────────────────────────────
@@ -352,8 +471,24 @@ function handleDeparture(io: Server, socket: Socket, explicit: boolean): void {
 
   if (room.engine) {
     player.isConnected = false;
-    io.to(room.code).emit('player-disconnected', { playerId: player.id });
+    // A bot finishes the round in their seat so the table is not stuck
+    // waiting on someone who has gone.
+    handSeatToBot(room, player, room.config.botDifficulty);
+    io.to(room.code).emit('player-disconnected', {
+      playerId: player.id,
+      takenOverByBot: true,
+    });
     emitLobby(io, room);
+
+    // They may have been holding an open vote up, or been on turn.
+    if (room.endVote) {
+      room.endVote.eligible = room.endVote.eligible.filter((id) => id !== player.id);
+      delete room.endVote.votes[player.id];
+      room.endVote.needed = votesNeeded(room);
+      resolveVote(io, room);
+    }
+    checkAbandonment(io, room);
+    evaluateBots(io, room);
     return;
   }
 

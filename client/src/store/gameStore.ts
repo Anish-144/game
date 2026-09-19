@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import type {
-  BidEntry, Card, CompletedTrick, GamePhase, PartnerCardSpec, Player,
+  BidEntry, Card, CompletedTrick, EndVote, GamePhase, PartnerCardSpec, Player,
   PublicGameState, RoomConfig, ScoreResult, Suit, TeamPoints, Trick,
 } from '../types';
 import { forgetRoom, getAvatar, getPlayerId, getPlayerName, lastRoom, rememberRoom } from '../lib/identity';
@@ -69,6 +69,11 @@ interface GameState {
   // invite
   invite: { roomCode: string; link: string; seatsLeft: number } | null;
 
+  /** An open vote to end the game, or null when there is none. */
+  endVote: EndVote | null;
+  /** Why the last game stopped early, shown once back in the lobby. */
+  stoppedReason: string | null;
+
   // ui
   banners: Banner[];
   error: string | null;
@@ -102,6 +107,9 @@ interface GameActions {
   pushBanner: (kind: Banner['kind'], text: string) => void;
   setError: (message: string | null) => void;
   setInvite: (invite: GameState['invite']) => void;
+  setEndVote: (vote: EndVote | null) => void;
+  stopGame: (reason: string, players?: Player[], config?: RoomConfig) => void;
+  clearStoppedReason: () => void;
   setRejoining: (v: boolean) => void;
   dismissBanner: (id: number) => void;
   leaveRoom: () => void;
@@ -137,6 +145,8 @@ const base = {
   teamPoints: null,
   roundWinner: null,
   invite: null as GameState['invite'],
+  endVote: null as EndVote | null,
+  stoppedReason: null as string | null,
   banners: [] as Banner[],
   error: null,
   errorNonce: 0,
@@ -255,6 +265,23 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
   setRejoining: (rejoining) => set({ rejoining }),
 
   setInvite: (invite) => set({ invite }),
+
+  setEndVote: (endVote) => set({ endVote }),
+
+  // The round is thrown away but the room, the seats and the code survive,
+  // so the table can regroup in the lobby and deal again.
+  stopGame: (reason, players, config) => set((s) => ({
+    ...base,
+    roomCode: s.roomCode,
+    config: config ?? s.config,
+    players: players ?? s.players,
+    connected: s.connected,
+    invite: s.invite,
+    phase: 'waiting' as GamePhase,
+    stoppedReason: reason,
+  })),
+
+  clearStoppedReason: () => set({ stoppedReason: null }),
 
   leaveRoom: () => { forgetRoom(); set({ ...base }); },
   resetRound: () => set({

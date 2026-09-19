@@ -29,6 +29,8 @@ export default function Lobby() {
   const myPlayerId = useGameStore((s) => s.myPlayerId);
   const connected = useGameStore((s) => s.connected);
   const rejoining = useGameStore((s) => s.rejoining);
+  const stoppedReason = useGameStore((s) => s.stoppedReason);
+  const clearStoppedReason = useGameStore((s) => s.clearStoppedReason);
   const invite = useGameStore((s) => s.invite);
 
   const [qrOpen, setQrOpen] = useState(false);
@@ -108,6 +110,22 @@ export default function Lobby() {
       />
 
       <ScreenBody className="px-5">
+        {stoppedReason && (
+          <motion.button
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={clearStoppedReason}
+            className="w-full rounded-2xl px-4 py-3 mb-4 text-left"
+            style={{ background: 'rgba(245,158,11,.16)', border: '1px solid rgba(251,191,36,.45)' }}
+          >
+            <div className="text-[12px] font-bold uppercase tracking-wider text-gold-200/80 mb-0.5">
+              Last game ended early
+            </div>
+            <div className="text-[14.5px] font-semibold">{stoppedReason}</div>
+            <div className="text-[12.5px] text-white/45 mt-1">Tap to dismiss</div>
+          </motion.button>
+        )}
+
         {/* ── room code card ──────────────────────────────── */}
         <button
           onClick={doCopyCode}
@@ -176,11 +194,13 @@ export default function Lobby() {
                         )}
                       </div>
                       <div className="text-[13px] text-white/50">
-                        {player.id === config.hostId
-                          ? 'Host · seat 1'
-                          : player.isBot
-                            ? `Bot · ${DIFFICULTY_LABEL[player.difficulty ?? config.botDifficulty]}`
-                            : `Seat ${i + 1}${player.isConnected ? '' : ' · offline'}`}
+                        {player.takenOver
+                          ? 'Left · bot finishing the round'
+                          : player.id === config.hostId
+                            ? 'Host · seat 1'
+                            : player.isBot
+                              ? `Bot · ${DIFFICULTY_LABEL[player.difficulty ?? config.botDifficulty]}`
+                              : `Seat ${i + 1}${player.isConnected ? '' : ' · offline'}`}
                       </div>
                     </div>
                     {isHost && player.isBot && (

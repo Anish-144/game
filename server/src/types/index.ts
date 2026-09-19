@@ -31,6 +31,19 @@ export interface Player {
   isBot: boolean;
   difficulty?: BotDifficulty;
   avatar: number; // 0-11, picks an accent colour + glyph on the client
+  /** A human seat a bot is playing because the person left mid-round. */
+  takenOver?: boolean;
+}
+
+/** An open vote to end the game early. Only humans still present may vote. */
+export interface EndVote {
+  startedBy: string;
+  startedAt: number;
+  /** playerId -> agreed to end */
+  votes: Record<string, boolean>;
+  /** How many yes votes end it, fixed when the vote opens. */
+  needed: number;
+  eligible: string[];
 }
 
 export type GamePhase =
@@ -233,4 +246,15 @@ export interface PlayCardPayload {
 export interface ReconnectPayload {
   playerId: string;
   roomCode: string;
+}
+
+export interface ProposeEndPayload {
+  playerId: string;
+  roomCode: string;
+}
+
+export interface CastEndVotePayload {
+  playerId: string;
+  roomCode: string;
+  agree: boolean;
 }

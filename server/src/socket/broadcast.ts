@@ -12,9 +12,39 @@ import { ROUND_END_MS, TRICK_SETTLE_MS } from '../engine/timing';
 
 /** Strip socket ids before anything leaves the server. */
 export function safePlayers(players: Player[]) {
-  return players.map(({ id, name, seatIndex, isReady, isConnected, isBot, difficulty, avatar }) => ({
-    id, name, seatIndex, isReady, isConnected, isBot, difficulty, avatar,
-  }));
+  return players.map(
+    ({ id, name, seatIndex, isReady, isConnected, isBot, difficulty, avatar, takenOver }) => ({
+      id, name, seatIndex, isReady, isConnected, isBot, difficulty, avatar, takenOver: !!takenOver,
+    }),
+  );
+}
+
+/** Tell the table where an open end-of-game vote stands. */
+export function emitEndVote(io: Server, room: Room): void {
+  const vote = room.endVote;
+  if (!vote) {
+    io.to(room.code).emit('end-vote-closed', {});
+    return;
+  }
+  const agreed = Object.values(vote.votes).filter(Boolean).length;
+  io.to(room.code).emit('end-vote', {
+    startedBy: vote.startedBy,
+    startedByName: room.players.find((p) => p.id === vote.startedBy)?.name ?? 'Someone',
+    votes: vote.votes,
+    agreed,
+    needed: vote.needed,
+    eligible: vote.eligible,
+  });
+}
+
+/** The round is over early. Everyone goes back to the lobby. */
+export function emitGameStopped(io: Server, room: Room, reason: string): void {
+  io.to(room.code).emit('game-stopped', {
+    reason,
+    players: safePlayers(room.players),
+    config: room.config,
+    roomCode: room.code,
+  });
 }
 
 export function emitLobby(io: Server, room: Room): void {

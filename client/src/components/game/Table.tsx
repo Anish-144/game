@@ -166,6 +166,7 @@ function Seat({ seat, avatarSize }: { seat: SeatView; avatarSize: number }) {
 
       <div className="mt-2 text-[12.5px] font-bold text-center leading-tight w-full truncate">
         {player.name}
+        {player.takenOver && <span className="text-white/45 font-semibold"> (bot)</span>}
       </div>
 
       {showPoints ? (
