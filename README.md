@@ -56,13 +56,15 @@ The host must support long-lived WebSocket connections and must run **one instan
 
 `render.yaml` in the repo root already describes the service.
 
-1. Put the project in a Git repository and push it to GitHub.
+1. Push the repository to GitHub. Create an empty repository there first, with no README or licence, then:
    ```bash
-   git init && git add -A && git commit -m "Kadi Teri" && git branch -M main
-   git remote add origin <your repo url> && git push -u origin main
+   git remote add origin https://github.com/<you>/kadi-teri.git
+   git push -u origin main
    ```
-2. On render.com choose **New**, then **Blueprint**, and point it at the repository. Render reads `render.yaml`.
-3. Wait for the first build, then open the `onrender.com` URL it gives you and share that with your friends.
+2. On render.com choose **New**, then **Blueprint**, and point it at the repository. Render reads `render.yaml` and needs nothing else.
+3. Wait for the first build, around three minutes, then open the `onrender.com` URL and share it.
+
+Every later push to `main` redeploys on its own.
 
 Two things to know about the free plan. The service sleeps after about fifteen minutes with no traffic, so the first visit afterwards takes roughly a minute to wake. A sleep or a redeploy also ends any game in progress, because rooms are in memory. Moving to the paid starter plan removes the sleeping.
 
