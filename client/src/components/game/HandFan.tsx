@@ -13,9 +13,6 @@ import { buzz } from '../../lib/haptics';
 import { play as playSound } from '../../lib/audio';
 
 const CARD_W = 64;
-/** Keep the whole fan, rotation and point chips included, inside 390px. */
-const MAX_SPREAD = 284;
-const FAN_HEIGHT = 158;
 
 export default function HandFan({
   hand,
