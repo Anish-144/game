@@ -281,6 +281,11 @@ export function registerHandlers(io: Server): void {
         return fail(socket, `Waiting on ${missing} more player${missing === 1 ? '' : 's'}`);
       }
 
+      // Belt and braces: ensure the host's socket is absolutely in the room
+      // before we emit the game-started event, just in case a rapid leave/create
+      // cycle caused a race condition where they left the socket.io room.
+      socket.join(room.code);
+
       startGame(room);
       emitLobby(io, room);
       emitGameStarted(io, room);

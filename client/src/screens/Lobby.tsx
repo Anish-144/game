@@ -285,7 +285,11 @@ export default function Lobby() {
 
         {isHost ? (
           <Button
-            onClick={() => { setStarting(true); startGame(); }}
+            onClick={() => {
+              setStarting(true);
+              startGame();
+              setTimeout(() => setStarting(false), 5000);
+            }}
             disabled={!full || starting || !connected}
             icon={starting || !connected ? <Spinner size={18} /> : undefined}
           >
