@@ -112,27 +112,28 @@ export default function Game() {
             <span className="text-[20px]">😀</span>
           </button>
           
+          {emoteOpen && (
+            <div className="fixed inset-0 z-40" onClick={() => setEmoteOpen(false)} />
+          )}
           <AnimatePresence>
             {emoteOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setEmoteOpen(false)} />
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                  className="absolute top-[52px] right-0 z-50 flex flex-col gap-2 p-2 rounded-2xl surface border border-white/10"
-                >
-                  {['😂', '😡', '👏', '😭', '🎉'].map((emo) => (
-                    <button
-                      key={emo}
-                      onClick={() => { sendEmote(emo); setEmoteOpen(false); }}
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-[24px] hover:bg-white/10 active:scale-90 transition-transform"
-                    >
-                      {emo}
-                    </button>
-                  ))}
-                </motion.div>
-              </>
+              <motion.div
+                key="emote-menu"
+                initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                className="absolute top-[52px] right-0 z-50 flex flex-col gap-2 p-2 rounded-2xl surface border border-white/10"
+              >
+                {['😂', '😡', '👏', '😭', '🎉'].map((emo) => (
+                  <button
+                    key={emo}
+                    onClick={() => { sendEmote(emo); setEmoteOpen(false); }}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-[24px] hover:bg-white/10 active:scale-90 transition-transform"
+                  >
+                    {emo}
+                  </button>
+                ))}
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
