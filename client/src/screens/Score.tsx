@@ -9,7 +9,7 @@ import { Avatar, Button, Screen, ScreenBody, ScreenFooter, TopBar } from '../ui'
 import PlayingCard from '../components/game/PlayingCard';
 import { useGameStore } from '../store/gameStore';
 import { useGame } from '../hooks/useGame';
-import { leaveRoom, startGame, returnToLobby } from '../lib/socket';
+import { leaveRoom, returnToLobby } from '../lib/socket';
 import { SUIT_ACCENT, SUIT_GLYPH, SUIT_LABEL, totalPointsFor } from '../lib/cards';
 import { play } from '../lib/audio';
 import { buzz } from '../lib/haptics';
