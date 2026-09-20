@@ -9,7 +9,7 @@ import { Avatar, Button, Screen, ScreenBody, ScreenFooter, TopBar } from '../ui'
 import PlayingCard from '../components/game/PlayingCard';
 import { useGameStore } from '../store/gameStore';
 import { useGame } from '../hooks/useGame';
-import { leaveRoom, startGame } from '../lib/socket';
+import { leaveRoom, startGame, returnToLobby } from '../lib/socket';
 import { SUIT_ACCENT, SUIT_GLYPH, SUIT_LABEL, totalPointsFor } from '../lib/cards';
 import { play } from '../lib/audio';
 import { buzz } from '../lib/haptics';
@@ -204,7 +204,7 @@ export default function Score() {
         <div className="flex gap-3">
           <Button variant="ghost" className="flex-1" onClick={() => { leaveRoom(); navigate('/'); }}>Home</Button>
           {config.hostId === myPlayerId ? (
-            <Button className="flex-1" onClick={() => startGame()}>Rematch</Button>
+            <Button className="flex-1" onClick={() => returnToLobby()}>Rematch</Button>
           ) : (
             <div className="flex-1 flex items-center justify-center text-[13px] font-bold text-white/40 uppercase tracking-wide">
               Waiting for host...

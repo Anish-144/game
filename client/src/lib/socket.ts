@@ -314,6 +314,12 @@ export function startGame(): void {
   getSocket().emit('start-game', { roomCode, playerId: myPlayerId });
 }
 
+export function returnToLobby(): void {
+  const { roomCode, myPlayerId } = store();
+  if (!roomCode) return;
+  getSocket().emit('return-to-lobby', { roomCode, playerId: myPlayerId });
+}
+
 export function requestInvite(): void {
   const { roomCode } = store();
   if (!roomCode) return;

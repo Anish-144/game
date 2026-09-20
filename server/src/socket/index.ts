@@ -327,6 +327,16 @@ export function registerHandlers(io: Server): void {
       evaluateBots(io, room);
     });
 
+    // ── RETURN TO LOBBY ──────────────────────────────────────
+    socket.on('return-to-lobby', (p: { roomCode: string; playerId: string }) => {
+      const room = getRoom(normalizeCode(p?.roomCode));
+      if (!room) return fail(socket, 'No room with that code');
+      if (room.config.hostId !== p.playerId) return fail(socket, 'Only the host can return to lobby');
+      if (room.engine && room.engine.state.phase !== 'scoring') return fail(socket, 'The game is still running');
+      
+      stopGame(io, room, '');
+    });
+
     // ── PLACE BID ────────────────────────────────────────────
     socket.on('place-bid', (p: PlaceBidPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
