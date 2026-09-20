@@ -29,13 +29,8 @@ export function ChatSheet({ open, onClose }: { open: boolean; onClose: () => voi
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
+        className="fixed bottom-24 right-6 z-50 w-[340px] max-w-[calc(100vw-3rem)] h-[450px] max-h-[60vh] bg-black/50 backdrop-blur-md border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
         style={{ animation: 'fade-in 0.2s ease-out' }}
-      />
-      <div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-neutral-900 rounded-t-3xl shadow-2xl flex flex-col"
-        style={{ height: '70vh', animation: 'slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
       >
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-lg font-semibold text-white">Room Chat</h2>
@@ -73,7 +68,7 @@ export function ChatSheet({ open, onClose }: { open: boolean; onClose: () => voi
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSend} className="p-4 border-t border-white/10 flex items-end gap-2 bg-neutral-900/50">
+        <form onSubmit={handleSend} className="p-3 border-t border-white/10 flex items-end gap-2 bg-black/20">
           <input
             type="text"
             value={text}

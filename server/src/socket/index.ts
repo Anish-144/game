@@ -309,7 +309,7 @@ export function registerHandlers(io: Server): void {
     socket.on('start-game', (p: StartGamePayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room) return fail(socket, 'No room with that code');
-      if (room.engine) return fail(socket, 'The game has already started');
+      if (room.engine && room.engine.state.phase !== 'scoring') return fail(socket, 'The game has already started');
       if (room.config.hostId !== p.playerId) return fail(socket, 'Only the host can start');
       if (!isFull(room)) {
         const missing = room.config.playerCount - room.players.length;
