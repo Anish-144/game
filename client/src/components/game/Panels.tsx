@@ -338,8 +338,8 @@ export function PartnerPanel({
                   ?
                 </div>
               )}
-              {spec && mode === '500' && (
-                spec.usesOtherCopy ? (
+              {spec && (
+                (mode === 'classic' || spec.usesOtherCopy) ? (
                   <div className="h-7 flex items-center justify-center rounded-full px-3 text-[11px] font-bold text-white/70 tracking-wide uppercase" style={{ background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.15)' }}>
                     Fixed
                   </div>

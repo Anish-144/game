@@ -100,6 +100,7 @@ export function isPartnerCard(
 export function partnerLabel(spec: PartnerCardSpec): string {
   const base = `${spec.rank}${SUIT_GLYPH[spec.suit]}`;
   if (spec.occurrence === 'any') return base;
+  if (spec.usesOtherCopy) return `${base} fixed`;
   return `${base} ${spec.occurrence === 'first' ? '1st' : '2nd'}`;
 }
 
