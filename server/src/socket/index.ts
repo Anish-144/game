@@ -66,10 +66,30 @@ function closeVote(io: Server, room: Room): void {
 
 /** Wind the round up and put everyone back in the lobby. */
 function stopGame(io: Server, room: Room, reason: string): void {
-  if (!room.engine) return;
+  // The engine may already be cleared (a vote, an abandonment, a second
+  // tap on Rematch). The table still has to be told to go to the lobby,
+  // or whoever asked is left staring at the score screen.
   endGame(room);
   emitGameStopped(io, room, reason);
   emitLobby(io, room);
+}
+
+/** The round is scored, so there is nothing left to play out. */
+function roundLive(room: Room): boolean {
+  return !!room.engine && room.engine.state.phase !== 'scoring';
+}
+
+/**
+ * The host walked away. Someone still at the table has to be able to
+ * start the rematch, so the crown moves on rather than pointing at a
+ * seat nobody is in.
+ */
+function passCrown(room: Room, leavingId: string): boolean {
+  if (room.config.hostId !== leavingId) return false;
+  const next = humansPresent(room).find((p) => p.id !== leavingId);
+  if (!next) return false;
+  room.config.hostId = next.id;
+  return true;
 }
 
 /**
@@ -309,7 +329,7 @@ export function registerHandlers(io: Server): void {
     socket.on('start-game', (p: StartGamePayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room) return fail(socket, 'No room with that code');
-      if (room.engine && room.engine.state.phase !== 'scoring') return fail(socket, 'The game has already started');
+      if (roundLive(room)) return fail(socket, 'The game has already started');
       if (room.config.hostId !== p.playerId) return fail(socket, 'Only the host can start');
       if (!isFull(room)) {
         const missing = room.config.playerCount - room.players.length;
@@ -332,7 +352,7 @@ export function registerHandlers(io: Server): void {
       const room = getRoom(normalizeCode(p?.roomCode));
       if (!room) return fail(socket, 'No room with that code');
       if (room.config.hostId !== p.playerId) return fail(socket, 'Only the host can return to lobby');
-      if (room.engine && room.engine.state.phase !== 'scoring') return fail(socket, 'The game is still running');
+      if (roundLive(room)) return fail(socket, 'The game is still running');
       
       stopGame(io, room, '');
     });
@@ -579,8 +599,11 @@ function handleDeparture(io: Server, socket: Socket, explicit: boolean): void {
 
   socket.leave(room.code);
 
-  if (room.engine) {
+  if (roundLive(room)) {
     player.isConnected = false;
+    // If the host goes, hand the crown over now so the table can call a
+    // rematch the moment this round is scored.
+    passCrown(room, player.id);
     // A bot finishes the round in their seat so the table is not stuck
     // waiting on someone who has gone.
     handSeatToBot(room, player, room.config.botDifficulty);
@@ -609,7 +632,7 @@ function handleDeparture(io: Server, socket: Socket, explicit: boolean): void {
     setTimeout(() => {
       const still = getRoom(session.roomCode);
       const p = still?.players.find((x) => x.id === session.playerId);
-      if (!still || !p || p.isConnected || still.engine) return;
+      if (!still || !p || p.isConnected || roundLive(still)) return;
       dropSeat(io, still.code, session.playerId);
     }, 20000);
     return;
@@ -623,15 +646,19 @@ function dropSeat(io: Server, roomCode: string, playerId: string): void {
   if (!room) return;
 
   removePlayer(room, playerId);
-  const humans = room.players.filter((p) => !p.isBot);
+  // A seat a bot is covering still belongs to whoever left it, so it
+  // counts as a person for the purpose of keeping the room alive.
+  const persons = room.players.filter(isPersonsSeat);
 
-  if (!humans.length) {
+  if (!persons.length) {
     deleteRoom(room.code);
     return;
   }
 
   if (room.config.hostId === playerId) {
-    room.config.hostId = humans[0].id; // pass the crown to the next human
+    // Prefer someone who is actually connected; a crown handed to an
+    // empty seat leaves the rest of the table unable to start anything.
+    room.config.hostId = (persons.find((p) => p.isConnected) ?? persons[0]).id;
   }
   io.to(room.code).emit('player-left', { playerId });
   emitLobby(io, room);

@@ -183,7 +183,11 @@ export function emitCardPlayed(
 }
 
 export function emitRoundFinished(io: Server, room: Room): void {
-  const engine = room.engine!;
+  // The round can be torn down inside the end-of-round pause — a vote
+  // passing, the table emptying — and this runs from a timer, so a
+  // missing engine here would take the server down with it.
+  if (!room.engine) return;
+  const engine = room.engine;
   const score = engine.getScore();
   const pub = engine.publicState();
   const named = score

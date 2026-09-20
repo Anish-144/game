@@ -22,6 +22,7 @@ export default function Score() {
   const myPlayerId = useGameStore((s) => s.myPlayerId);
   const roomCode = useGameStore((s) => s.roomCode);
   const rejoining = useGameStore((s) => s.rejoining);
+  const phase = useGameStore((s) => s.phase);
   const { playerById, nameOf } = useGame();
 
   const onDeclarerSide = !!score?.declarerTeam.playerIds.includes(myPlayerId);
@@ -30,6 +31,13 @@ export default function Score() {
   useEffect(() => {
     if (!roomCode && !rejoining) navigate('/', { replace: true });
   }, [roomCode, rejoining, navigate]);
+
+  // The host called a rematch, so the table goes back to the lobby it
+  // came from. Held while a rejoin is in flight: a fresh store reads as
+  // 'waiting' before the server has said where this round stands.
+  useEffect(() => {
+    if (phase === 'waiting' && !rejoining) navigate('/lobby', { replace: true });
+  }, [phase, rejoining, navigate]);
 
   useEffect(() => {
     if (!score) return;
