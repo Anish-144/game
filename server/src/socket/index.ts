@@ -316,6 +316,23 @@ export function registerHandlers(io: Server): void {
       emitLobby(io, room);
     });
 
+    // ── UPDATE CAPACITY ──────────────────────────────────────
+    socket.on('update-capacity', (p: { roomCode: string; playerId: string; newCapacity: number }) => {
+      const room = getRoom(normalizeCode(p?.roomCode));
+      if (!room) return fail(socket, 'No room with that code');
+      if (room.engine) return fail(socket, 'The game has already started');
+      if (room.config.hostId !== p.playerId) return fail(socket, 'Only the host can update capacity');
+
+      const requested = Number.isFinite(p.newCapacity) ? Math.round(p.newCapacity) : room.config.playerCount;
+      const validMin = Math.max(room.config.playerCountMin, room.players.length);
+      const newCapacity = Math.max(validMin, Math.min(room.config.playerCountMax, requested));
+
+      if (room.config.playerCount !== newCapacity) {
+        room.config.playerCount = newCapacity;
+        emitLobby(io, room);
+      }
+    });
+
     // ── READY (optional, kept for non-host seats) ────────────
     socket.on('ready', (p: PlayerReadyPayload) => {
       const room = getRoom(normalizeCode(p?.roomCode));

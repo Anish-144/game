@@ -308,6 +308,12 @@ export function removeBot(botId: string): void {
   getSocket().emit('remove-bot', { roomCode, playerId: myPlayerId, botId });
 }
 
+export function updateCapacity(newCapacity: number): void {
+  const { roomCode, myPlayerId } = store();
+  if (!roomCode) return;
+  getSocket().emit('update-capacity', { roomCode, playerId: myPlayerId, newCapacity });
+}
+
 export function startGame(): void {
   const { roomCode, myPlayerId } = store();
   if (!roomCode) return;

@@ -286,6 +286,12 @@ export interface SendEmotePayload {
   emote: string;
 }
 
+export interface UpdateCapacityPayload {
+  playerId: string;
+  roomCode: string;
+  newCapacity: number;
+}
+
 export interface PublicGameState {
   phase: GamePhase;
   config: RoomConfig;

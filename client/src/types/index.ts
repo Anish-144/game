@@ -22,6 +22,18 @@ export interface SendChatPayload {
   text: string;
 }
 
+export interface SendEmotePayload {
+  playerId: string;
+  roomCode: string;
+  emote: string;
+}
+
+export interface UpdateCapacityPayload {
+  playerId: string;
+  roomCode: string;
+  newCapacity: number;
+}
+
 export interface ChatMessage {
   id: string;
   senderId: string;

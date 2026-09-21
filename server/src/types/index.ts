@@ -285,3 +285,9 @@ export interface SendEmotePayload {
   roomCode: string;
   emote: string;
 }
+
+export interface UpdateCapacityPayload {
+  playerId: string;
+  roomCode: string;
+  newCapacity: number;
+}

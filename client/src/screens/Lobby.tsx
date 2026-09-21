@@ -10,7 +10,7 @@ import Sheet from '../ui/Sheet';
 import QrCode, { useQrSvg } from '../components/QrCode';
 import Reconnecting from '../components/Reconnecting';
 import { useGameStore } from '../store/gameStore';
-import { addBot, leaveRoom, removeBot, requestInvite, startGame } from '../lib/socket';
+import { addBot, leaveRoom, removeBot, requestInvite, startGame, updateCapacity } from '../lib/socket';
 import { copyText, canShare, inviteLink, shareInvite, shareQr } from '../lib/invite';
 import { requiredPartnerCount } from '../lib/cards';
 import { buzz } from '../lib/haptics';
@@ -185,9 +185,35 @@ export default function Lobby() {
         )}
 
         {/* ── seats ───────────────────────────────────────── */}
-        <p className="text-[13px] font-bold uppercase tracking-wider text-white/45 mb-2.5">
-          Seats
-        </p>
+        <div className="flex items-center justify-between mb-2.5">
+          <p className="text-[13px] font-bold uppercase tracking-wider text-white/45">
+            Seats ({seats} max {config.playerCountMax})
+          </p>
+          {isHost && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => { buzz('light'); updateCapacity(seats - 1); }}
+                disabled={seats <= Math.max(config.playerCountMin, players.length)}
+                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 active:scale-90 transition-transform disabled:opacity-30 disabled:pointer-events-none"
+                style={{ background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M5 12h14" />
+                </svg>
+              </button>
+              <button
+                onClick={() => { buzz('light'); updateCapacity(seats + 1); }}
+                disabled={seats >= config.playerCountMax}
+                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 active:scale-90 transition-transform disabled:opacity-30 disabled:pointer-events-none"
+                style={{ background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col gap-2.5">
           <AnimatePresence initial={false}>
