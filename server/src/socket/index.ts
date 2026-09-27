@@ -8,7 +8,7 @@ import { Server, Socket } from 'socket.io';
 import {
   AddBotPayload, BotDifficulty, CastEndVotePayload, CreateRoomPayload, JoinRoomPayload,
   PassBidPayload, PlaceBidPayload, PlayCardPayload, PlayerReadyPayload,
-  Player, ProposeEndPayload, ReconnectPayload, RemoveBotPayload, SelectPartnersPayload,
+  Player, ProposeEndPayload, ReconnectPayload, RemoveBotPayload, RemovePlayerPayload, SelectPartnersPayload,
   SelectTrumpPayload, ShareInvitePayload, StartGamePayload, SendChatPayload, ChatMessage, SendEmotePayload, PlayerEmoteMessage,
 } from '../types';
 import {
@@ -314,6 +314,29 @@ export function registerHandlers(io: Server): void {
 
       if (!removeBot(room, p.botId)) return fail(socket, 'No bot to remove');
       emitLobby(io, room);
+    });
+
+    // ── REMOVE PLAYER ────────────────────────────────────────
+    socket.on('remove-player', (p: RemovePlayerPayload) => {
+      const room = getRoom(normalizeCode(p?.roomCode));
+      if (!room) return fail(socket, 'No room with that code');
+      if (room.engine) return fail(socket, 'The game has already started');
+      if (room.config.hostId !== p.playerId) return fail(socket, 'Only the host can remove players');
+      if (p.playerId === p.targetId) return fail(socket, 'You cannot remove yourself');
+
+      const target = room.players.find((x) => x.id === p.targetId);
+      if (!target || target.isBot) return fail(socket, 'Invalid player');
+
+      if (target.socketId) {
+        io.to(target.socketId).emit('error', { message: 'You were removed from the room by the host' });
+        const targetSocket = io.sockets.sockets.get(target.socketId);
+        if (targetSocket) {
+          targetSocket.leave(room.code);
+          sessions.delete(target.socketId);
+        }
+      }
+
+      dropSeat(io, room.code, target.id);
     });
 
     // ── UPDATE CAPACITY ──────────────────────────────────────

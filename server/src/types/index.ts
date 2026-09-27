@@ -214,6 +214,12 @@ export interface RemoveBotPayload {
   botId: string;
 }
 
+export interface RemovePlayerPayload {
+  playerId: string;
+  roomCode: string;
+  targetId: string;
+}
+
 export interface StartGamePayload {
   playerId: string;
   roomCode: string;

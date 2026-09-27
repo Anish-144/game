@@ -10,7 +10,7 @@ import Sheet from '../ui/Sheet';
 import QrCode, { useQrSvg } from '../components/QrCode';
 import Reconnecting from '../components/Reconnecting';
 import { useGameStore } from '../store/gameStore';
-import { addBot, leaveRoom, removeBot, requestInvite, startGame, updateCapacity } from '../lib/socket';
+import { addBot, leaveRoom, removeBot, removePlayer, requestInvite, startGame, updateCapacity } from '../lib/socket';
 import { copyText, canShare, inviteLink, shareInvite, shareQr } from '../lib/invite';
 import { requiredPartnerCount } from '../lib/cards';
 import { buzz } from '../lib/haptics';
@@ -256,9 +256,13 @@ export default function Lobby() {
                               : `Seat ${i + 1}${player.isConnected ? '' : ' · offline'}`}
                       </div>
                     </div>
-                    {isHost && player.isBot && (
+                    {isHost && player.id !== myPlayerId && (
                       <button
-                        onClick={() => { buzz('medium'); removeBot(player.id); }}
+                        onClick={() => { 
+                          buzz('medium'); 
+                          if (player.isBot) removeBot(player.id);
+                          else removePlayer(player.id);
+                        }}
                         aria-label={`Remove ${player.name}`}
                         className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 active:scale-90 transition-transform"
                         style={{ background: 'rgba(239,68,68,.16)', border: '1px solid rgba(239,68,68,.35)' }}

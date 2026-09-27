@@ -251,7 +251,7 @@ export function bindSocket(): Socket {
   s.on('error', (d: { message: string }) => {
     const message = d?.message ?? 'Something went wrong';
     // A stale remembered room should not keep re-triggering a failed rejoin.
-    if (/room has closed|not seated|no room with that code/i.test(message)) {
+    if (/room has closed|not seated|no room with that code|removed from the room/i.test(message)) {
       forgetRoom();
       store().setRejoining(false);
     }
@@ -306,6 +306,12 @@ export function removeBot(botId: string): void {
   const { roomCode, myPlayerId } = store();
   if (!roomCode) return;
   getSocket().emit('remove-bot', { roomCode, playerId: myPlayerId, botId });
+}
+
+export function removePlayer(targetId: string): void {
+  const { roomCode, myPlayerId } = store();
+  if (!roomCode) return;
+  getSocket().emit('remove-player', { roomCode, playerId: myPlayerId, targetId });
 }
 
 export function updateCapacity(newCapacity: number): void {
