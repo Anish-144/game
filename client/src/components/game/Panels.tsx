@@ -207,6 +207,8 @@ export function TrumpPanel({
   hand: Card[];
   onSelect: (suit: Suit) => void;
 }) {
+  const [selected, setSelected] = useState<Suit | null>(null);
+
   const counts = useMemo(() => {
     const m: Record<Suit, number> = { spades: 0, hearts: 0, diamonds: 0, clubs: 0 };
     hand.forEach((c) => { m[c.suit] += 1; });
@@ -215,14 +217,17 @@ export function TrumpPanel({
 
   return (
     <Dock title="Choose trump" subtitle="Trump beats every other suit">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {SUITS.map((suit) => (
           <motion.button
             key={suit}
             whileTap={{ scale: 0.95 }}
-            onClick={() => { play('trump'); buzz('medium'); onSelect(suit); }}
+            onClick={() => { play('tap'); buzz('light'); setSelected(suit); }}
             className="h-[104px] rounded-3xl flex flex-col items-center justify-center gap-1"
-            style={{
+            style={selected === suit ? {
+              background: 'rgba(255,255,255,.16)',
+              border: '1.5px solid rgba(251,191,36,.7)',
+            } : {
               background: 'rgba(255,255,255,.07)',
               border: '1.5px solid rgba(255,255,255,.14)',
             }}
@@ -235,6 +240,12 @@ export function TrumpPanel({
           </motion.button>
         ))}
       </div>
+      <Button 
+        onClick={() => { if (selected) { play('trump'); buzz('medium'); onSelect(selected); } }} 
+        disabled={!selected}
+      >
+        Confirm trump
+      </Button>
     </Dock>
   );
 }

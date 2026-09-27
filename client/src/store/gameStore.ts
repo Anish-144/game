@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import type {
-  BidEntry, Card, CompletedTrick, EndVote, GamePhase, PartnerCardSpec, Player,
+  BidEntry, Card, CompletedTrick, GamePhase, PartnerCardSpec, Player,
   PublicGameState, RoomConfig, ScoreResult, Suit, TeamPoints, Trick, ChatMessage, PlayerEmoteMessage,
 } from '../types';
 import { forgetRoom, getAvatar, getPlayerId, getPlayerName, lastRoom, rememberRoom } from '../lib/identity';
@@ -69,8 +69,6 @@ interface GameState {
   // invite
   invite: { roomCode: string; link: string; seatsLeft: number } | null;
 
-  /** An open vote to end the game, or null when there is none. */
-  endVote: EndVote | null;
   /** Why the last game stopped early, shown once back in the lobby. */
   stoppedReason: string | null;
 
@@ -113,7 +111,6 @@ interface GameActions {
   pushBanner: (kind: Banner['kind'], text: string) => void;
   setError: (message: string | null) => void;
   setInvite: (invite: GameState['invite']) => void;
-  setEndVote: (vote: EndVote | null) => void;
   stopGame: (reason: string, players?: Player[], config?: RoomConfig) => void;
   clearStoppedReason: () => void;
   setRejoining: (v: boolean) => void;
@@ -156,7 +153,6 @@ const base = {
   teamPoints: null,
   roundWinner: null,
   invite: null as GameState['invite'],
-  endVote: null as EndVote | null,
   stoppedReason: null as string | null,
   banners: [] as Banner[],
   error: null,
@@ -279,8 +275,6 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
   setRejoining: (rejoining) => set({ rejoining }),
 
   setInvite: (invite) => set({ invite }),
-
-  setEndVote: (endVote) => set({ endVote }),
 
   addChat: (msg) => set((s) => ({ chat: [...s.chat, msg], unreadChat: true })),
   setChatHistory: (chat) => set({ chat }),

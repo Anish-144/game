@@ -35,16 +35,6 @@ export interface Player {
   takenOver?: boolean;
 }
 
-export interface EndVote {
-  startedBy: string;
-  startedAt: number;
-  /** playerId -> agreed to end */
-  votes: Record<string, boolean>;
-  /** How many yes votes end it, fixed when the vote opens. */
-  needed: number;
-  eligible: string[];
-}
-
 export interface ChatMessage {
   id: string;
   senderId: string;
@@ -267,17 +257,6 @@ export interface PlayCardPayload {
 export interface ReconnectPayload {
   playerId: string;
   roomCode: string;
-}
-
-export interface ProposeEndPayload {
-  playerId: string;
-  roomCode: string;
-}
-
-export interface CastEndVotePayload {
-  playerId: string;
-  roomCode: string;
-  agree: boolean;
 }
 
 export interface SendChatPayload {

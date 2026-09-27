@@ -19,23 +19,6 @@ export function safePlayers(players: Player[]) {
   );
 }
 
-/** Tell the table where an open end-of-game vote stands. */
-export function emitEndVote(io: Server, room: Room): void {
-  const vote = room.endVote;
-  if (!vote) {
-    io.to(room.code).emit('end-vote-closed', {});
-    return;
-  }
-  const agreed = Object.values(vote.votes).filter(Boolean).length;
-  io.to(room.code).emit('end-vote', {
-    startedBy: vote.startedBy,
-    startedByName: room.players.find((p) => p.id === vote.startedBy)?.name ?? 'Someone',
-    votes: vote.votes,
-    agreed,
-    needed: vote.needed,
-    eligible: vote.eligible,
-  });
-}
 
 /** The round is over early. Everyone goes back to the lobby. */
 export function emitGameStopped(io: Server, room: Room, reason: string): void {

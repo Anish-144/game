@@ -97,17 +97,6 @@ export function bindSocket(): Socket {
     );
   });
 
-  // ── ending the game early ───────────────────────────────
-  s.on('end-vote', (d) => {
-    store().setEndVote(d);
-  });
-
-  s.on('end-vote-closed', () => {
-    const had = store().endVote;
-    store().setEndVote(null);
-    if (had) store().pushBanner('info', 'The game carries on');
-  });
-
   s.on('game-stopped', (d) => {
     // The lobby shows the reason on arrival, so a banner would only
     // repeat it on top of itself.
@@ -363,17 +352,6 @@ export function playCard(cardId: string): void {
   getSocket().emit('play-card', { roomCode, playerId: myPlayerId, cardId });
 }
 
-export function proposeEndGame(): void {
-  const { roomCode, myPlayerId } = store();
-  if (!roomCode) return;
-  getSocket().emit('propose-end', { roomCode, playerId: myPlayerId });
-}
-
-export function castEndVote(agree: boolean): void {
-  const { roomCode, myPlayerId } = store();
-  if (!roomCode) return;
-  getSocket().emit('cast-end-vote', { roomCode, playerId: myPlayerId, agree });
-}
 
 export function leaveRoom(): void {
   const s = getSocket();

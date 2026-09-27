@@ -16,8 +16,8 @@ import DevOverlay from '../components/DevOverlay';
 import { useGameStore } from '../store/gameStore';
 import { useGame } from '../hooks/useGame';
 import {
-  castEndVote, leaveRoom, passBid, placeBid, playCard,
-  proposeEndGame, selectPartners, selectTrump, sendEmote,
+  leaveRoom, passBid, placeBid, playCard,
+  selectPartners, selectTrump, sendEmote,
 } from '../lib/socket';
 import { SUIT_GLYPH, SUIT_LABEL, partnerLabel, sortHand } from '../lib/cards';
 import { useSettings } from '../store/settingsStore';
@@ -317,70 +317,7 @@ export default function Game() {
         </div>
       )}
 
-      {/* ── vote to end the game ─────────────────────────── */}
-      <Sheet
-        open={!!s.endVote}
-        onClose={() => { /* a vote is answered, not dismissed */ }}
-        dismissable={false}
-        title="End this game?"
-      >
-        {s.endVote && (
-          <div className="pb-2">
-            <p className="text-[15px] text-white/70 text-center mb-1">
-              <span className="font-bold text-white">
-                {s.endVote.startedBy === s.myPlayerId ? 'You' : g.playerById(s.endVote.startedBy)?.name ?? 'Someone'}
-              </span>{' '}
-              asked to stop the round. The table goes back to the lobby and the
-              room code stays the same.
-            </p>
 
-            <div className="flex items-center justify-center gap-2 my-5">
-              {s.endVote.eligible.map((id) => {
-                const answer = s.endVote!.votes[id];
-                const p = g.playerById(id);
-                return (
-                  <div key={id} className="flex flex-col items-center gap-1.5" style={{ width: 62 }}>
-                    <Avatar name={p?.name ?? '?'} index={p?.avatar ?? 0} size={40} />
-                    <span className="text-[11.5px] font-bold truncate w-full text-center">
-                      {p?.name ?? 'Player'}
-                    </span>
-                    <span
-                      className="text-[10.5px] font-black px-1.5 h-5 rounded-full flex items-center"
-                      style={answer === true
-                        ? { background: 'rgba(52,211,153,.25)', color: '#6ee7b7' }
-                        : answer === false
-                          ? { background: 'rgba(248,113,113,.22)', color: '#fca5a5' }
-                          : { background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.45)' }}
-                    >
-                      {answer === true ? 'end' : answer === false ? 'play on' : '…'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <p className="text-[13.5px] text-white/55 text-center mb-4 tabular">
-              {Object.values(s.endVote.votes).filter(Boolean).length} of {s.endVote.needed} needed
-            </p>
-
-            {s.endVote.votes[s.myPlayerId] === undefined ? (
-              <div className="flex gap-3">
-                <Button variant="ghost" size="md" onClick={() => castEndVote(false)} full>
-                  Keep playing
-                </Button>
-                <Button variant="danger" size="md" onClick={() => castEndVote(true)} full>
-                  End it
-                </Button>
-              </div>
-            ) : (
-              <div className="h-[52px] rounded-[26px] surface flex items-center justify-center gap-3 text-[15px] font-bold text-white/60">
-                <Spinner size={16} />
-                Waiting for the others
-              </div>
-            )}
-          </div>
-        )}
-      </Sheet>
 
       <DevOverlay />
 
@@ -472,18 +409,6 @@ export default function Game() {
           <Button variant="ghost" size="md" onClick={() => { setMenuOpen(false); navigate('/settings'); }}>
             Settings
           </Button>
-          <Button
-            variant="ghost"
-            size="md"
-            disabled={!!s.endVote || botHasMySeat}
-            onClick={() => { setMenuOpen(false); proposeEndGame(); }}
-          >
-            {s.endVote ? 'A vote is already open' : 'End this game'}
-          </Button>
-          <p className="text-[12.5px] text-white/45 text-center -mt-1">
-            Everyone still playing votes. More than half ends it and the table
-            goes back to the lobby.
-          </p>
           <Button variant="danger" size="md" onClick={() => { leaveRoom(); navigate('/'); }}>
             Leave table
           </Button>

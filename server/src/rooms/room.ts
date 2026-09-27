@@ -3,7 +3,7 @@
 // The host is ALWAYS seated inside the room at creation time.
 // ============================================================
 
-import { BotDifficulty, ChatMessage, EndVote, Player, RoomConfig } from '../types';
+import { BotDifficulty, ChatMessage, Player, RoomConfig } from '../types';
 import { GameEngine } from '../engine/engine';
 
 export interface Room {
@@ -17,8 +17,7 @@ export interface Room {
   settleUntil?: number;
   /** How many people were at the table when the deal started. */
   humansAtStart?: number;
-  /** An open vote to end the game early. */
-  endVote?: EndVote;
+
   /** Chat history for this room. */
   chat: ChatMessage[];
 }
@@ -174,7 +173,6 @@ export function restoreTakenOverSeats(room: Room): Player[] {
 /** Clear the round so the table can go back to the lobby. */
 export function endGame(room: Room): void {
   room.engine = null;
-  room.endVote = undefined;
   room.settleUntil = undefined;
   room.humansAtStart = undefined;
 
@@ -187,7 +185,6 @@ export function endGame(room: Room): void {
 
 export function startGame(room: Room): GameEngine {
   restoreTakenOverSeats(room);
-  room.endVote = undefined;
   room.humansAtStart = room.players.filter((p) => !p.isBot).length;
   const engine = new GameEngine(room.config, room.players);
   room.engine = engine;
