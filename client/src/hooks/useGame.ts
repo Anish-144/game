@@ -46,7 +46,7 @@ export function useGame() {
 
   /** Everyone the table can prove is on the declaring side. */
   const knownTeamIds = useMemo(
-    () => [s.declarerId, ...s.revealedPartners].filter(Boolean) as string[],
+    () => Array.from(new Set([s.declarerId, ...s.revealedPartners].filter(Boolean))) as string[],
     [s.declarerId, s.revealedPartners],
   );
 
@@ -57,7 +57,10 @@ export function useGame() {
 
   /** True once every named partner card has been played and claimed. */
   const fullyRevealed =
-    s.partnerSpecs.length > 0 && s.revealedPartners.length >= s.partnerSpecs.length;
+    s.partnerSpecs.length > 0 &&
+    ((s.firedSpecs?.length ?? 0) >= s.partnerSpecs.length ||
+     (s.partnerClaims?.length ?? 0) >= s.partnerSpecs.length ||
+     s.revealedPartners.length >= s.partnerSpecs.length);
 
   /**
    * What the opposition has to get past to sink the contract. Everything
@@ -67,6 +70,15 @@ export function useGame() {
   const opponentTarget = Math.max(0, totalPoints - s.highestBid);
 
   const onDeclaringSide = (playerId: string) => knownTeamIds.includes(playerId);
+
+  const partnerCardCountFor = (playerId: string) => {
+    if (s.partnerClaims && s.partnerClaims.length > 0) {
+      return s.partnerClaims.filter((c) => c.playerId === playerId).length;
+    }
+    return s.revealedPartners.includes(playerId) ? 1 : 0;
+  };
+
+  const isDoublePartner = partnerCardCountFor(s.myPlayerId) >= 2;
 
   /**
    * Once the last partner reveals, the opposition is known by elimination,
@@ -101,6 +113,8 @@ export function useGame() {
       cardsLeft: s.handCounts[player.id] ?? 0,
       isDeclarer: player.id === s.declarerId,
       isPartner: s.revealedPartners.includes(player.id),
+      isDoublePartner: partnerCardCountFor(player.id) >= 2,
+      partnerCardCount: partnerCardCountFor(player.id),
       isTurn: s.phase === 'bidding'
         ? s.currentBidder === player.id
         : s.currentTurn === player.id,
@@ -111,7 +125,7 @@ export function useGame() {
       showPoints: s.phase === 'playing' || s.phase === 'scoring',
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.players, s.myPlayerId, s.handCounts, s.declarerId, s.revealedPartners, s.phase, s.currentBidder, s.currentTurn, latestBid, pointsTaken, teamPoints, oppositionPoints, fullyRevealed, opponentTarget, s.highestBid]);
+  }, [s.players, s.myPlayerId, s.handCounts, s.declarerId, s.revealedPartners, s.firedSpecs, s.partnerClaims, s.phase, s.currentBidder, s.currentTurn, latestBid, pointsTaken, teamPoints, oppositionPoints, fullyRevealed, opponentTarget, s.highestBid]);
 
   const partnersNeeded = s.config
     ? requiredPartnerCount(s.config.mode, s.config.playerCount)
@@ -136,6 +150,7 @@ export function useGame() {
     playerById, nameOf, seats, partnersNeeded, myTricks, myPoints,
     pointsTaken, iHoldPartnerCard,
     teamPoints, oppositionPoints, fullyRevealed, opponentTarget, knownTeamIds, myScore,
+    partnerCardCountFor, isDoublePartner,
     declarerName: nameOf(s.declarerId),
     bidderName: nameOf(s.currentBidder),
     turnName: nameOf(s.currentTurn),

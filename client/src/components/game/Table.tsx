@@ -15,6 +15,8 @@ export interface SeatView {
   cardsLeft: number;
   isDeclarer: boolean;
   isPartner: boolean;
+  isDoublePartner?: boolean;
+  partnerCardCount?: number;
   isTurn: boolean;
   bid: number | 'pass' | null;
   /** Points on this seat: their own, or the team total once fully revealed. */
@@ -111,7 +113,7 @@ export default function Table({
 
 function Seat({ seat, avatarSize }: { seat: SeatView; avatarSize: number }) {
   const {
-    player, cardsLeft, isDeclarer, isPartner, isTurn, bid,
+    player, cardsLeft, isDeclarer, isPartner, isDoublePartner, isTurn, bid,
     points, outOf, onDeclaringSide, showPoints,
   } = seat;
 
@@ -151,7 +153,7 @@ function Seat({ seat, avatarSize }: { seat: SeatView; avatarSize: number }) {
               : isDeclarer
                 ? 'rgba(245,158,11,.5)'
                 : isPartner
-                  ? 'rgba(52,211,153,.55)'
+                  ? (isDoublePartner ? 'rgba(251,191,36,.65)' : 'rgba(52,211,153,.55)')
                   : 'rgba(255,255,255,.14)',
           }}
         >
@@ -175,11 +177,15 @@ function Seat({ seat, avatarSize }: { seat: SeatView; avatarSize: number }) {
         )}
         {isPartner && (
           <span
-            className="absolute -top-1 -right-1 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[12px] font-black"
-            style={{ background: '#34d399', color: '#04251b', boxShadow: '0 2px 8px rgba(0,0,0,.45)' }}
-            title="Revealed partner"
+            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1 rounded-full flex items-center justify-center text-[11px] font-black"
+            style={{
+              background: isDoublePartner ? '#fbbf24' : '#34d399',
+              color: '#04251b',
+              boxShadow: '0 2px 8px rgba(0,0,0,.45)',
+            }}
+            title={isDoublePartner ? 'Double partner (holds both partner cards)' : 'Revealed partner'}
           >
-            ★
+            {isDoublePartner ? '★★' : '★'}
           </span>
         )}
 

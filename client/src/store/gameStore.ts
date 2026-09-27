@@ -49,6 +49,8 @@ interface GameState {
   /** The cards the declarer named. Public once chosen. */
   partnerSpecs: PartnerCardSpec[];
   revealedPartners: string[];
+  firedSpecs: number[];
+  partnerClaims: { specIndex: number; playerId: string }[];
 
   // play
   currentTrick: Trick;
@@ -102,7 +104,16 @@ interface GameActions {
   setTrump: (suit: Suit) => void;
   setPartnerSpecs: (specs: PartnerCardSpec[]) => void;
   holdTrick: (trick: Trick) => void;
-  addRevealedPartner: (playerId: string, all?: string[]) => void;
+  addRevealedPartner: (
+    playerId: string,
+    all?: string[],
+    firedSpecs?: number[],
+    partnerClaims?: { specIndex: number; playerId: string }[]
+  ) => void;
+  setFiredSpecs: (
+    firedSpecs?: number[],
+    partnerClaims?: { specIndex: number; playerId: string }[]
+  ) => void;
   setCurrentTrick: (trick: Trick) => void;
   finishTrick: (winnerId: string, completed: CompletedTrick[], nextTurn: string | null) => void;
   setCurrentTurn: (id: string | null) => void;
@@ -141,6 +152,8 @@ const base = {
   trump: null,
   partnerSpecs: [] as PartnerCardSpec[],
   revealedPartners: [] as string[],
+  firedSpecs: [] as number[],
+  partnerClaims: [] as { specIndex: number; playerId: string }[],
   currentTrick: EMPTY_TRICK,
   lastTrick: null,
   completedTricks: [] as CompletedTrick[],
@@ -220,10 +233,17 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
     trickWinnerId: trick.winnerId,
   }),
 
-  addRevealedPartner: (playerId, all) => set((s) => ({
+  addRevealedPartner: (playerId, all, firedSpecs, partnerClaims) => set((s) => ({
     revealedPartners: all ?? (s.revealedPartners.includes(playerId)
       ? s.revealedPartners
       : [...s.revealedPartners, playerId]),
+    firedSpecs: firedSpecs ?? s.firedSpecs,
+    partnerClaims: partnerClaims ?? s.partnerClaims,
+  })),
+
+  setFiredSpecs: (firedSpecs, partnerClaims) => set((s) => ({
+    firedSpecs: firedSpecs ?? s.firedSpecs,
+    partnerClaims: partnerClaims ?? s.partnerClaims,
   })),
 
   setCurrentTrick: (currentTrick) => set({ currentTrick }),
@@ -254,6 +274,8 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
     trump: s.trump !== undefined ? s.trump : prev.trump,
     partnerSpecs: s.partnerSpecs ?? prev.partnerSpecs,
     revealedPartners: s.revealedPartners ?? prev.revealedPartners,
+    firedSpecs: s.firedSpecs ?? prev.firedSpecs,
+    partnerClaims: s.partnerClaims ?? prev.partnerClaims,
     currentTrick: s.currentTrick ?? prev.currentTrick,
     completedTricks: s.completedTricks ?? prev.completedTricks,
     currentLeader: s.currentLeader !== undefined ? s.currentLeader : prev.currentLeader,

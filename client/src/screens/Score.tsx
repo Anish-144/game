@@ -164,6 +164,7 @@ export default function Score() {
           won={score.declarerTeam.won}
           playerById={playerById}
           meId={myPlayerId}
+          partnerClaims={score.partnerClaims}
         />
         <TeamBlock
           title="Opponents"
@@ -225,7 +226,7 @@ export default function Score() {
 }
 
 function TeamBlock({
-  title, accent, ids, points, won, playerById, meId,
+  title, accent, ids, points, won, playerById, meId, partnerClaims,
 }: {
   title: string;
   accent: string;
@@ -234,6 +235,7 @@ function TeamBlock({
   won: boolean;
   playerById: (id: string) => { name: string; avatar: number; isBot: boolean } | undefined;
   meId: string;
+  partnerClaims?: { specIndex: number; playerId: string }[];
 }) {
   return (
     <div
@@ -247,11 +249,13 @@ function TeamBlock({
       <div className="flex flex-wrap gap-2.5">
         {ids.map((id) => {
           const p = playerById(id);
+          const isDouble = (partnerClaims?.filter((c) => c.playerId === id).length ?? 0) >= 2;
           return (
             <div key={id} className="flex items-center gap-2 pr-3 pl-1 h-10 rounded-full bg-white/7">
               <Avatar name={p?.name ?? '?'} index={p?.avatar ?? 0} isBot={p?.isBot} size={32} />
-              <span className="text-[13.5px] font-bold max-w-[110px] truncate">
+              <span className="text-[13.5px] font-bold max-w-[130px] truncate flex items-center gap-1">
                 {p?.name ?? 'Player'}{id === meId ? ' (you)' : ''}
+                {isDouble && <span className="text-amber-300 font-extrabold text-[11px] whitespace-nowrap">★★</span>}
               </span>
             </div>
           );

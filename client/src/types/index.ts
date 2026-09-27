@@ -140,6 +140,7 @@ export interface ScoreResult {
   pointBreakdown: PointBreakdownItem[];
   partnerCardsSelected: PartnerCardSpec[];
   revealedPartners: string[];
+  partnerClaims?: { specIndex: number; playerId: string }[];
   declarerId: string;
   trump: Suit;
 }
@@ -158,6 +159,8 @@ export interface PublicGameState {
   partnerSpecs: PartnerCardSpec[];
   revealedPartners: string[];
   newlyRevealedPartner: string | null;
+  firedSpecs?: number[];
+  partnerClaims?: { specIndex: number; playerId: string }[];
   currentTrick: Trick;
   completedTricks: CompletedTrick[];
   currentLeader: string | null;

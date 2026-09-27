@@ -129,6 +129,7 @@ export interface ScoreResult {
   pointBreakdown: PointBreakdownItem[];
   partnerCardsSelected: PartnerCardSpec[];
   revealedPartners: string[];
+  partnerClaims?: { specIndex: number; playerId: string }[];
   declarerId: string;
   trump: Suit;
 }
@@ -155,6 +156,7 @@ export interface GameState {
   revealedPartners: string[];        // playerIds whose partnership is public
   newlyRevealedPartner: string | null;
   firedSpecs: number[];              // indexes of partner specs already claimed
+  partnerClaims: { specIndex: number; playerId: string }[];
 
   // Occurrence tracking
   occurrenceCounts: Record<string, number>; // key = `${rank}_${suit}`
@@ -285,6 +287,8 @@ export interface PublicGameState {
   partnerSpecs: PartnerCardSpec[];
   revealedPartners: string[];
   newlyRevealedPartner: string | null;
+  firedSpecs?: number[];
+  partnerClaims?: { specIndex: number; playerId: string }[];
   currentTrick: Trick;
   completedTricks: CompletedTrick[];
   currentLeader: string | null;

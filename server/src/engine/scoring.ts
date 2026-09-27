@@ -60,6 +60,7 @@ export function computeScore(state: GameState): ScoreResult {
     pointBreakdown: Object.values(breakdown).sort((a, b) => b.total - a.total),
     partnerCardsSelected: state.partnerSpecs,
     revealedPartners: state.revealedPartners,
+    partnerClaims: state.partnerClaims,
     declarerId,
     trump: state.trump!,
   };

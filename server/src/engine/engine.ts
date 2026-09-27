@@ -30,6 +30,7 @@ export class GameEngine {
       revealedPartners: [],
       newlyRevealedPartner: null,
       firedSpecs: [],
+      partnerClaims: [],
       occurrenceCounts: {},
       otherOccurrenceCounts: {},
       currentTrick: { plays: [], leadSuit: null, winnerId: null },
@@ -116,11 +117,11 @@ export class GameEngine {
    * them, so whoever holds one knows they are on the declaring side.
    * Who holds them is still hidden until the card is played.
    */
-  publicState(): Omit<GameState, 'hands' | 'passedPlayers' | 'firedSpecs'> & {
+  publicState(): Omit<GameState, 'hands' | 'passedPlayers'> & {
     hands: Record<string, number>;
     passedPlayers: string[];
   } {
-    const { hands, passedPlayers, firedSpecs, ...rest } = this.state;
+    const { hands, passedPlayers, ...rest } = this.state;
     return {
       ...rest,
       hands: Object.fromEntries(Object.entries(hands).map(([id, h]) => [id, h.length])),

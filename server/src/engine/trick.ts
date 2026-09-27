@@ -12,6 +12,8 @@ export interface PlayResult {
   trickComplete: boolean;
   trickWinnerId?: string;
   partnerRevealedPlayerId?: string; // playerId newly identified as partner
+  isDoublePartner?: boolean;        // true if this player holds multiple partner cards
+  partnerClaims?: { specIndex: number; playerId: string }[];
   roundComplete: boolean;
 }
 
@@ -48,15 +50,24 @@ export function applyPlay(
 
   // Check for partner reveal
   let partnerRevealedPlayerId: string | undefined;
+  let isDoublePartner = false;
   const match = checkPartnerReveal(state, card, playerId);
   if (match) {
     state.firedSpecs.push(match.index);
     const holder = findPartnerHolder(state, match.spec, playerId);
+    state.partnerClaims = state.partnerClaims ?? [];
+    state.partnerClaims.push({ specIndex: match.index, playerId: holder });
+
+    const claimsForHolder = state.partnerClaims.filter((c) => c.playerId === holder).length;
+    if (claimsForHolder > 1) {
+      isDoublePartner = true;
+    }
+
     if (!state.revealedPartners.includes(holder)) {
       state.revealedPartners.push(holder);
-      state.newlyRevealedPartner = holder;
-      partnerRevealedPlayerId = holder;
     }
+    state.newlyRevealedPartner = holder;
+    partnerRevealedPlayerId = holder;
   }
 
   // Check trick completion
@@ -88,12 +99,21 @@ export function applyPlay(
       trickComplete: true,
       trickWinnerId: winnerId,
       partnerRevealedPlayerId,
+      isDoublePartner,
+      partnerClaims: state.partnerClaims,
       roundComplete,
     };
   }
 
   state.currentTurn = nextPlayer(state, playerId);
-  return { valid: true, trickComplete: false, partnerRevealedPlayerId, roundComplete: false };
+  return {
+    valid: true,
+    trickComplete: false,
+    partnerRevealedPlayerId,
+    isDoublePartner,
+    partnerClaims: state.partnerClaims,
+    roundComplete: false,
+  };
 }
 
 export function resolveTrick(trick: Trick, trump: Suit): string {

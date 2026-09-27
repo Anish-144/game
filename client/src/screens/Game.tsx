@@ -177,7 +177,9 @@ export default function Game() {
               ))}
             </div>
             {g.iHoldPartnerCard && (
-              <span className="text-[12px] font-bold text-mint-300 shrink-0">you are a partner</span>
+              <span className="text-[12px] font-bold text-mint-300 shrink-0">
+                {g.isDoublePartner ? 'you are double partner' : 'you are a partner'}
+              </span>
             )}
           </div>
         </div>
@@ -217,7 +219,9 @@ export default function Game() {
               {s.myPlayerName || 'You'}
               {g.isDeclarer && <span className="text-[12px]">👑</span>}
               {s.revealedPartners.includes(s.myPlayerId) && (
-                <span className="text-[12px] text-mint-300">★</span>
+                <span className="text-[12px] text-mint-300">
+                  {g.isDoublePartner ? '★★' : '★'}
+                </span>
               )}
             </div>
             <div className="text-[12.5px] tabular flex items-center gap-1.5">
@@ -328,14 +332,17 @@ export default function Game() {
           <Row label="Mode" value={s.config.mode === '500' ? 'Kadi Teri 500' : 'Classic'} />
           <Row label="Contract" value={s.declarerId ? `${s.highestBid} by ${g.declarerName}` : 'Not set'} />
           <Row label="Trump" value={s.trump ? SUIT_LABEL[s.trump] : 'Not set'} />
-          <Row label="Partners revealed" value={String(s.revealedPartners.length)} />
+          <Row
+            label="Partners revealed"
+            value={`${s.partnerClaims?.length ?? s.firedSpecs?.length ?? s.revealedPartners.length} / ${s.partnerSpecs.length || g.partnersNeeded}`}
+          />
           <Row label="Tricks played" value={String(s.completedTricks.length)} />
         </div>
 
         {s.phase === 'playing' && (
           <>
             <p className="text-[13px] font-bold uppercase tracking-wider text-white/45 mb-2">
-              Points taken
+               Points taken
             </p>
             {g.fullyRevealed && (
               <>
@@ -378,7 +385,11 @@ export default function Game() {
                         {p.name}
                         {p.id === s.myPlayerId && <span className="text-white/45 font-semibold"> (you)</span>}
                         {p.id === s.declarerId && <span className="text-gold-300"> 👑</span>}
-                        {s.revealedPartners.includes(p.id) && <span className="text-mint-300"> ★</span>}
+                        {s.revealedPartners.includes(p.id) && (
+                          <span className="text-mint-300">
+                            {g.partnerCardCountFor(p.id) >= 2 ? ' ★★' : ' ★'}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="text-[16px] font-black tabular text-mint-300">

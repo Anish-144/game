@@ -134,12 +134,17 @@ export function emitCardPlayed(
     hands: pub.hands,
     trickComplete: !!finished,
     settleMs: finished ? TRICK_SETTLE_MS : 0,
+    firedSpecs: pub.firedSpecs,
+    partnerClaims: pub.partnerClaims,
   });
 
   if (result.partnerRevealedPlayerId) {
     io.to(room.code).emit('partner-revealed', {
       partnerId: result.partnerRevealedPlayerId,
       revealedPartners: pub.revealedPartners,
+      firedSpecs: pub.firedSpecs,
+      partnerClaims: pub.partnerClaims,
+      isDoublePartner: !!result.isDoublePartner,
     });
   }
 

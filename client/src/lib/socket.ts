@@ -162,6 +162,9 @@ export function bindSocket(): Socket {
   s.on('card-played', (d) => {
     store().setHandCounts(d.hands);
     store().removeFromMyHand(d.cardId);
+    if (d.firedSpecs || d.partnerClaims) {
+      store().setFiredSpecs(d.firedSpecs, d.partnerClaims);
+    }
     play('play');
 
     if (d.trickComplete) {
@@ -175,8 +178,12 @@ export function bindSocket(): Socket {
   });
 
   s.on('partner-revealed', (d) => {
-    store().addRevealedPartner(d.partnerId, d.revealedPartners);
-    store().pushBanner('reveal', `${nameOf(d.partnerId)} is a partner`);
+    store().addRevealedPartner(d.partnerId, d.revealedPartners, d.firedSpecs, d.partnerClaims);
+    if (d.isDoublePartner) {
+      store().pushBanner('reveal', `${nameOf(d.partnerId)} holds both partner cards! (Double Partner)`);
+    } else {
+      store().pushBanner('reveal', `${nameOf(d.partnerId)} is a partner`);
+    }
     play('reveal');
     buzz('success');
   });
