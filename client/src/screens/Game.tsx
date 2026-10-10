@@ -19,7 +19,7 @@ import {
   leaveRoom, passBid, placeBid, playCard,
   selectPartners, selectTrump, sendEmote,
 } from '../lib/socket';
-import { SUIT_GLYPH, SUIT_LABEL, partnerLabel, sortHand } from '../lib/cards';
+import { SUIT_ACCENT, SUIT_GLYPH, SUIT_LABEL, partnerLabel, sortHand } from '../lib/cards';
 import { useSettings } from '../store/settingsStore';
 import type { Card, Suit } from '../types';
 
@@ -219,8 +219,26 @@ export default function Game() {
               {s.myPlayerName || 'You'}
               {g.isDeclarer && <span className="text-[12px]">👑</span>}
               {s.revealedPartners.includes(s.myPlayerId) && (
-                <span className="text-[12px] text-mint-300">
-                  {g.isDoublePartner ? '★★' : '★'}
+                <span className="flex items-center gap-0.5 ml-1.5 z-10">
+                  {g.revealedPartnerCardsFor(s.myPlayerId).map((c, idx) => (
+                    <span
+                      key={idx}
+                      className="flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[10px] font-black bg-white"
+                      style={{
+                        color: SUIT_ACCENT[c.suit],
+                        boxShadow: '0 2px 8px rgba(0,0,0,.45)',
+                        border: '1px solid rgba(0,0,0,0.1)'
+                      }}
+                      title={`Partner Card: ${c.rank} of ${c.suit}`}
+                    >
+                      {c.rank}<span className="text-[11px] ml-[1px] leading-none" style={{ marginTop: '-1px' }}>{SUIT_GLYPH[c.suit]}</span>
+                    </span>
+                  ))}
+                  {g.revealedPartnerCardsFor(s.myPlayerId).length === 0 && (
+                    <span className="text-[12px] text-mint-300">
+                      {g.isDoublePartner ? '★★' : '★'}
+                    </span>
+                  )}
                 </span>
               )}
             </div>
@@ -386,8 +404,26 @@ export default function Game() {
                         {p.id === s.myPlayerId && <span className="text-white/45 font-semibold"> (you)</span>}
                         {p.id === s.declarerId && <span className="text-gold-300"> 👑</span>}
                         {s.revealedPartners.includes(p.id) && (
-                          <span className="text-mint-300">
-                            {g.partnerCardCountFor(p.id) >= 2 ? ' ★★' : ' ★'}
+                          <span className="inline-flex items-center gap-0.5 ml-1.5 align-middle">
+                            {g.revealedPartnerCardsFor(p.id).map((c, idx) => (
+                              <span
+                                key={idx}
+                                className="flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[10px] font-black bg-white"
+                                style={{
+                                  color: SUIT_ACCENT[c.suit],
+                                  boxShadow: '0 2px 8px rgba(0,0,0,.45)',
+                                  border: '1px solid rgba(0,0,0,0.1)'
+                                }}
+                                title={`Partner Card: ${c.rank} of ${c.suit}`}
+                              >
+                                {c.rank}<span className="text-[11px] ml-[1px] leading-none" style={{ marginTop: '-1px' }}>{SUIT_GLYPH[c.suit]}</span>
+                              </span>
+                            ))}
+                            {g.revealedPartnerCardsFor(p.id).length === 0 && (
+                              <span className="text-mint-300">
+                                {g.partnerCardCountFor(p.id) >= 2 ? ' ★★' : ' ★'}
+                              </span>
+                            )}
                           </span>
                         )}
                       </div>

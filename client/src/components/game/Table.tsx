@@ -17,6 +17,7 @@ export interface SeatView {
   isPartner: boolean;
   isDoublePartner?: boolean;
   partnerCardCount?: number;
+  partnerCards?: import('../../types').PartnerCardSpec[];
   isTurn: boolean;
   bid: number | 'pass' | null;
   /** Points on this seat: their own, or the team total once fully revealed. */
@@ -176,17 +177,35 @@ function Seat({ seat, avatarSize }: { seat: SeatView; avatarSize: number }) {
           </span>
         )}
         {isPartner && (
-          <span
-            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1 rounded-full flex items-center justify-center text-[11px] font-black"
-            style={{
-              background: isDoublePartner ? '#fbbf24' : '#34d399',
-              color: '#04251b',
-              boxShadow: '0 2px 8px rgba(0,0,0,.45)',
-            }}
-            title={isDoublePartner ? 'Double partner (holds both partner cards)' : 'Revealed partner'}
-          >
-            {isDoublePartner ? '★★' : '★'}
-          </span>
+          <div className="absolute -top-2 -right-4 flex items-center gap-0.5 z-10">
+            {seat.partnerCards?.map((c, idx) => (
+              <span
+                key={idx}
+                className="flex items-center justify-center min-w-[24px] h-[24px] px-1 rounded-full text-[11px] font-black bg-white"
+                style={{
+                  color: SUIT_ACCENT[c.suit],
+                  boxShadow: '0 2px 8px rgba(0,0,0,.45)',
+                  border: '1px solid rgba(0,0,0,0.1)'
+                }}
+                title={`Partner Card: ${c.rank} of ${c.suit}`}
+              >
+                {c.rank}<span className="text-[12.5px] ml-[1px] leading-none" style={{ marginTop: '-1px' }}>{SUIT_GLYPH[c.suit]}</span>
+              </span>
+            ))}
+            {(!seat.partnerCards || seat.partnerCards.length === 0) && (
+              <span
+                className="min-w-[22px] h-[22px] px-1 rounded-full flex items-center justify-center text-[11px] font-black"
+                style={{
+                  background: isDoublePartner ? '#fbbf24' : '#34d399',
+                  color: '#04251b',
+                  boxShadow: '0 2px 8px rgba(0,0,0,.45)',
+                }}
+                title={isDoublePartner ? 'Double partner (holds both partner cards)' : 'Revealed partner'}
+              >
+                {isDoublePartner ? '★★' : '★'}
+              </span>
+            )}
+          </div>
         )}
 
         <span

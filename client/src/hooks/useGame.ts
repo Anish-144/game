@@ -115,6 +115,7 @@ export function useGame() {
       isPartner: s.revealedPartners.includes(player.id),
       isDoublePartner: partnerCardCountFor(player.id) >= 2,
       partnerCardCount: partnerCardCountFor(player.id),
+      partnerCards: revealedPartnerCardsFor(player.id),
       isTurn: s.phase === 'bidding'
         ? s.currentBidder === player.id
         : s.currentTurn === player.id,
@@ -125,7 +126,7 @@ export function useGame() {
       showPoints: s.phase === 'playing' || s.phase === 'scoring',
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.players, s.myPlayerId, s.handCounts, s.declarerId, s.revealedPartners, s.firedSpecs, s.partnerClaims, s.phase, s.currentBidder, s.currentTurn, latestBid, pointsTaken, teamPoints, oppositionPoints, fullyRevealed, opponentTarget, s.highestBid]);
+  }, [s.players, s.myPlayerId, s.handCounts, s.declarerId, s.revealedPartners, s.firedSpecs, s.partnerClaims, s.phase, s.currentBidder, s.currentTurn, latestBid, pointsTaken, teamPoints, oppositionPoints, fullyRevealed, opponentTarget, s.highestBid, s.partnerSpecs]);
 
   const partnersNeeded = s.config
     ? requiredPartnerCount(s.config.mode, s.config.playerCount)
@@ -145,12 +146,20 @@ export function useGame() {
     [s.myHand, s.partnerSpecs],
   );
 
+  const revealedPartnerCardsFor = (playerId: string) => {
+    if (!s.partnerClaims) return [];
+    return s.partnerClaims
+      .filter((c) => c.playerId === playerId)
+      .map((c) => s.partnerSpecs[c.specIndex])
+      .filter(Boolean);
+  };
+
   return {
     me, isMyTurn, isCurrentBidder, isDeclarer, isHost,
     playerById, nameOf, seats, partnersNeeded, myTricks, myPoints,
     pointsTaken, iHoldPartnerCard,
     teamPoints, oppositionPoints, fullyRevealed, opponentTarget, knownTeamIds, myScore,
-    partnerCardCountFor, isDoublePartner,
+    partnerCardCountFor, isDoublePartner, revealedPartnerCardsFor,
     declarerName: nameOf(s.declarerId),
     bidderName: nameOf(s.currentBidder),
     turnName: nameOf(s.currentTurn),
