@@ -13,6 +13,7 @@ import Settings from './screens/Settings';
 import Rules from './screens/Rules';
 import Banners from './components/Banners';
 import { ChatContainer } from './components/chat/ChatContainer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { bindSocket } from './lib/socket';
 import { useGameStore } from './store/gameStore';
@@ -55,6 +56,8 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>,
 );

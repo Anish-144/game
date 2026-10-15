@@ -78,6 +78,14 @@ export function useGame() {
     return s.revealedPartners.includes(playerId) ? 1 : 0;
   };
 
+  const revealedPartnerCardsFor = (playerId: string) => {
+    if (!s.partnerClaims) return [];
+    return s.partnerClaims
+      .filter((c) => c.playerId === playerId)
+      .map((c) => s.partnerSpecs[c.specIndex])
+      .filter(Boolean);
+  };
+
   const isDoublePartner = partnerCardCountFor(s.myPlayerId) >= 2;
 
   /**
@@ -145,14 +153,6 @@ export function useGame() {
     () => s.myHand.some((c) => s.partnerSpecs.some((p) => p.rank === c.rank && p.suit === c.suit)),
     [s.myHand, s.partnerSpecs],
   );
-
-  const revealedPartnerCardsFor = (playerId: string) => {
-    if (!s.partnerClaims) return [];
-    return s.partnerClaims
-      .filter((c) => c.playerId === playerId)
-      .map((c) => s.partnerSpecs[c.specIndex])
-      .filter(Boolean);
-  };
 
   return {
     me, isMyTurn, isCurrentBidder, isDeclarer, isHost,
