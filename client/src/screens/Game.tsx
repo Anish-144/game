@@ -106,7 +106,7 @@ export default function Game() {
           <button
             onClick={() => setEmoteOpen((v) => !v)}
             aria-label="Send emote"
-            className="w-11 h-11 rounded-full flex items-center justify-center"
+            className="w-11 h-11 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition"
             style={{ background: 'rgba(11,17,24,.6)', border: '1px solid rgba(255,255,255,.14)' }}
           >
             <span className="text-[20px]">😀</span>
@@ -119,20 +119,32 @@ export default function Game() {
             {emoteOpen && (
               <motion.div
                 key="emote-menu"
-                initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                initial={{ opacity: 0, y: -10, scale: 0.92 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                className="absolute top-[52px] right-0 z-50 flex flex-col gap-2 p-2 rounded-2xl surface border border-white/10"
+                exit={{ opacity: 0, y: -10, scale: 0.92 }}
+                className="absolute top-[52px] right-0 z-50 p-3 rounded-3xl bg-neutral-950/95 backdrop-blur-xl border border-white/15 shadow-2xl w-[268px]"
               >
-                {['😂', '😡', '👏', '😭', '🎉'].map((emo) => (
-                  <button
-                    key={emo}
-                    onClick={() => { sendEmote(emo); setEmoteOpen(false); }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-[24px] hover:bg-white/10 active:scale-90 transition-transform"
-                  >
-                    {emo}
-                  </button>
-                ))}
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
+                  <span className="text-[11.5px] font-bold uppercase tracking-wider text-white/50">Send Reaction</span>
+                  <span className="text-[11px] text-amber-400 font-semibold">Tap to send</span>
+                </div>
+                <div className="grid grid-cols-6 gap-1">
+                  {[
+                    '😂', '🤣', '😭', '😡', '😱', '🤯',
+                    '🥳', '😎', '👏', '🔥', '💀', '💩',
+                    '🤡', '🤫', '🤔', '😴', '👑', '🎯',
+                    '💣', '⚡', '🍀', '🃏', '🤝', '❤️'
+                  ].map((emo) => (
+                    <button
+                      key={emo}
+                      onClick={() => { sendEmote(emo); setEmoteOpen(false); }}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-[22px] hover:bg-white/15 active:scale-90 hover:scale-110 transition-all"
+                      title={emo}
+                    >
+                      {emo}
+                    </button>
+                  ))}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -154,9 +166,9 @@ export default function Game() {
 
       {/* ── partner cards, public once the declarer names them ─ */}
       {s.partnerSpecs.length > 0 && s.phase !== 'scoring' && (
-        <div className="shrink-0 px-4 pb-2">
+        <div className="shrink-0 px-4 pb-1.5">
           <div
-            className="rounded-2xl px-3 py-2 flex items-center gap-2.5"
+            className="rounded-2xl px-3 py-1.5 flex items-center gap-2.5"
             style={{
               background: g.iHoldPartnerCard ? 'rgba(16,185,129,.18)' : 'rgba(11,17,24,.55)',
               border: `1px solid ${g.iHoldPartnerCard ? 'rgba(52,211,153,.6)' : 'rgba(255,255,255,.14)'}`,
@@ -196,7 +208,7 @@ export default function Game() {
 
       {/* ── my strip ────────────────────────────────────── */}
       {s.phase === 'playing' && (
-        <div className="shrink-0 px-4 py-2 flex items-center gap-3">
+        <div className="shrink-0 px-4 py-1.5 flex items-center gap-3">
           <div className="relative">
             <AnimatePresence>
               {myEmotes.map((e) => (

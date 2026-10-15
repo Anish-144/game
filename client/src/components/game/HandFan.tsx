@@ -74,15 +74,16 @@ export default function HandFan({
   };
 
   const cardH = Math.round(CARD_W * 1.42);
-  const totalH = rows.length > 1 ? cardH * 2 + 12 : cardH;
+  const rowOverlap = rows.length > 1 ? 28 : 0;
+  const totalH = rows.length > 1 ? cardH * 2 - rowOverlap : cardH;
 
   return (
-    <div className="relative w-full flex flex-col items-center gap-3 pt-2" style={{ height: totalH + 30 }}>
+    <div className="relative w-full flex flex-col items-center pt-1" style={{ height: totalH + 22 }}>
       {rows.map((row, r) => (
         <div
           key={r}
-          className="relative"
-          style={{ width: CARD_W + step * (row.length - 1), height: cardH }}
+          className={`relative ${r > 0 ? '-mt-7' : ''}`}
+          style={{ width: CARD_W + step * (row.length - 1), height: cardH, zIndex: r === 0 ? 10 : 20 }}
         >
           {row.map((card, i) => {
             const isSelected = selected === card.id;

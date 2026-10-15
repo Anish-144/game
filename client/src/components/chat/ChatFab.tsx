@@ -53,16 +53,16 @@ export function ChatFab({ onClick }: { onClick: () => void }) {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onClick={handleClick}
-      className="fixed top-4 right-4 z-30 p-3 bg-neutral-800/80 backdrop-blur-md text-white rounded-full shadow-lg border border-white/10 hover:bg-neutral-700/80 transition-colors touch-none select-none"
+      className="fixed bottom-5 right-5 z-40 p-3 bg-neutral-900/90 backdrop-blur-md text-white rounded-full shadow-2xl border border-white/15 hover:bg-neutral-800 transition-colors touch-none select-none hover:scale-105 active:scale-95"
       style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
       aria-label="Open chat"
     >
       <div className="relative flex items-center justify-center w-6 h-6 pointer-events-none">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full opacity-80">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full opacity-90">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
         {unread && (
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-neutral-900 shadow-sm animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-neutral-900 shadow-sm animate-pulse" />
         )}
       </div>
     </button>

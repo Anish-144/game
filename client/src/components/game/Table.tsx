@@ -31,11 +31,57 @@ export interface SeatView {
 }
 
 /**
- * Seat angles run clockwise from the bottom of the ellipse, where the
- * local player always sits. Opponent 0 is the seat to their left.
+ * Adaptive seat positioning around the stadium-shaped table.
+ * Opponents are arranged clockwise from the local player's left (bottom-left -> left -> top -> right -> bottom-right).
  */
-function seatAngle(index: number, total: number): number {
-  return 90 + ((index + 1) * 360) / total;
+function getSeatPosition(index: number, count: number): { x: number; y: number; angle: number } {
+  if (count <= 0) return { x: 0, y: -36, angle: 270 };
+  if (count === 1) return { x: 0, y: -36, angle: 270 };
+
+  // For 6 or more opponents, place 2 on left and 2 on right to maximize vertical space.
+  // The rest spread comfortably across the wide top edge.
+  const nSide = count >= 6 ? 2 : 1;
+  const nTop = Math.max(1, count - 2 * nSide);
+
+  let x = 0;
+  let y = 0;
+
+  if (index < nSide) {
+    // Left edge (clockwise from bottom to top)
+    if (nSide === 1) {
+      x = -38;
+      y = -4;
+    } else {
+      const t = index / (nSide - 1); // 0 (lower) to 1 (upper)
+      x = -37 - Math.sin(t * Math.PI) * 2;
+      y = 15 - t * 29; // +15% down to -14%
+    }
+  } else if (index < nSide + nTop) {
+    // Top edge (clockwise from left to right)
+    const topIdx = index - nSide;
+    const t = nTop === 1 ? 0.5 : topIdx / (nTop - 1);
+    const span = nTop >= 5 ? 28 : nTop >= 3 ? 23 : 16;
+    x = -span + t * (2 * span);
+    // Subtle arch curving down towards the table ends
+    const arch = 1 - Math.pow(x / 32, 2) * 0.08;
+    y = -35.5 * arch;
+  } else {
+    // Right edge (clockwise from top to bottom)
+    const rightIdx = index - nSide - nTop;
+    if (nSide === 1) {
+      x = 38;
+      y = -4;
+    } else {
+      const t = rightIdx / (nSide - 1); // 0 (upper) to 1 (lower)
+      x = 37 + Math.sin(t * Math.PI) * 2;
+      y = -14 + t * 29; // -14% down to +15%
+    }
+  }
+
+  let angle = Math.atan2(y, x) * (180 / Math.PI);
+  if (angle < 0) angle += 360;
+
+  return { x, y, angle };
 }
 
 function polar(angleDeg: number, rx: number, ry: number) {
@@ -57,15 +103,18 @@ export default function Table({
   playerById: (id: string) => Player | undefined;
 }) {
   const crowded = total > 7;
-  const bubble = crowded ? 74 : 90;       // width of one seat block
+  const bubble = crowded ? 78 : 92;       // width of one seat block
   const avatar = crowded ? 42 : 52;
 
   /** Where each player sits, so a played card can fly toward them. */
   const angleByPlayer = useMemo(() => {
     const m = new Map<string, number>();
-    seats.forEach((s, i) => m.set(s.player.id, seatAngle(i, total)));
+    seats.forEach((s, i) => {
+      const pos = getSeatPosition(i, seats.length);
+      m.set(s.player.id, pos.angle);
+    });
     return m;
-  }, [seats, total]);
+  }, [seats]);
 
   return (
     <div className="relative flex-1 min-h-0 bg-felt overflow-hidden">
@@ -82,7 +131,7 @@ export default function Table({
       {/* opponents — positioned with offsets rather than a transform, so
           framer-motion layout animations cannot fight the centring */}
       {seats.map((seat, i) => {
-        const { x, y } = polar(seatAngle(i, total), 38, 35);
+        const { x, y } = getSeatPosition(i, seats.length);
         return (
           <div
             key={seat.player.id}
@@ -216,28 +265,31 @@ function Seat({ seat, avatarSize }: { seat: SeatView; avatarSize: number }) {
         </span>
       </div>
 
-      <div className="mt-2 text-[12.5px] font-bold text-center leading-tight w-full truncate">
+      <div
+        className="mt-1.5 text-[12px] font-bold text-center leading-tight w-full max-w-[88px] truncate text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+        title={player.name}
+      >
         {player.name}
         {player.takenOver && <span className="text-white/45 font-semibold"> (bot)</span>}
       </div>
 
       {showPoints ? (
         <div
-          className="mt-0.5 px-2 py-0.5 rounded-full text-[11.5px] font-black tabular whitespace-nowrap"
+          className="mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-black tabular whitespace-nowrap shadow-md border border-white/10"
           style={onDeclaringSide
-            ? { background: 'rgba(245,158,11,.24)', color: '#fcd34d' }
-            : { background: 'rgba(16,185,129,.2)', color: '#6ee7b7' }}
+            ? { background: 'rgba(245,158,11,.3)', color: '#fcd34d' }
+            : { background: 'rgba(16,185,129,.25)', color: '#6ee7b7' }}
           title={onDeclaringSide ? 'Points against the contract' : 'Points out of what the declaring side has not taken'}
         >
           {points}
-          <span className="opacity-55"> / {outOf}</span>
+          <span className="opacity-60"> / {outOf}</span>
         </div>
       ) : bid !== null ? (
         <div
-          className="mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold tabular"
+          className="mt-0.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold tabular shadow-md border border-white/10"
           style={bid === 'pass'
-            ? { background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.55)' }
-            : { background: 'rgba(245,158,11,.22)', color: '#fcd34d' }}
+            ? { background: 'rgba(255,255,255,.12)', color: 'rgba(255,255,255,.65)' }
+            : { background: 'rgba(245,158,11,.28)', color: '#fcd34d' }}
         >
           {bid === 'pass' ? 'pass' : bid}
         </div>
@@ -259,9 +311,9 @@ function TrickCircle({
   angleByPlayer: Map<string, number>;
   compact: boolean;
 }) {
-  const size = compact ? 186 : 206;
-  const cardW = compact ? 46 : 52;
-  const radius = compact ? 50 : 58;
+  const size = compact ? 154 : 188;
+  const cardW = compact ? 38 : 48;
+  const radius = compact ? 40 : 50;
   const settled = !!trick.winnerId;
 
   return (
@@ -313,13 +365,13 @@ function TrickCircle({
               />
               {player && (
                 <div
-                  className="absolute -bottom-[15px] left-1/2 -translate-x-1/2 px-1.5 h-[15px] rounded-full text-[10px] font-bold whitespace-nowrap flex items-center"
+                  className="absolute -bottom-[14px] left-1/2 -translate-x-1/2 px-1.5 h-[14px] rounded-full text-[9.5px] font-bold whitespace-nowrap flex items-center shadow-md border border-white/10"
                   style={{
-                    background: 'rgba(11,17,24,.92)',
-                    color: settled && trick.winnerId === p.playerId ? '#fcd34d' : '#cbd5e1',
+                    background: 'rgba(11,17,24,.95)',
+                    color: settled && trick.winnerId === p.playerId ? '#fcd34d' : '#e2e8f0',
                   }}
                 >
-                  {player.name.slice(0, 7)}
+                  {player.name.slice(0, 8)}
                 </div>
               )}
             </motion.div>
